@@ -1,5 +1,5 @@
 # Application
-Re-usable Helm charts for different application deployment patterns at JupiterOne
+Reusable Helm charts for different application deployment patterns at JupiterOne
 
 ## Installing the Chart
 
