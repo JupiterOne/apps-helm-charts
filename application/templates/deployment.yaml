@@ -1,0 +1,239 @@
+{{- if .Values.deployment }}
+{{- if .Values.deployment.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+{{ include "application.labels.team" . | indent 4 }}
+{{ include "application.labels.chart" . | indent 4 }}
+{{- if .Values.deployment.additionalLabels }}
+{{ toYaml .Values.deployment.additionalLabels | indent 4 }}
+{{- end }}
+{{- if .Values.deployment.annotations }}
+  annotations:
+{{ toYaml .Values.deployment.annotations | indent 4 }}
+{{- end }}
+  name: {{ template "application.name" . }}
+  namespace: {{ template "application.namespace" . }}
+spec:
+{{- if .Values.deployment.replicas }}
+  replicas: {{ .Values.deployment.replicas }}
+{{- end }}
+  selector:
+    matchLabels:
+{{ include "application.labels.selector" . | indent 6 }}
+  {{- if .Values.deployment.strategy }}
+  strategy:
+{{ toYaml .Values.deployment.strategy | indent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+{{ include "application.labels.selector" . | indent 8 }}
+{{- if .Values.deployment.podLabels }}
+{{ toYaml .Values.deployment.podLabels | indent 8 }}
+{{- end }}
+{{- if or .Values.deployment.additionalPodAnnotations .Values.deployment.fluentdConfigAnnotations }}
+      annotations:
+{{- end }}
+{{- with .Values.deployment.additionalPodAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if .Values.deployment.fluentdConfigAnnotations }}
+        fluentdConfiguration: >
+          [
+            {
+              "containers":
+              [
+                {
+                  "expressionFirstLine": "{{ .Values.deployment.fluentdConfigAnnotations.regexFirstLine }}",
+                  "expression": "{{ .Values.deployment.fluentdConfigAnnotations.regex }}",
+                  "timeFormat": "{{ .Values.deployment.fluentdConfigAnnotations.timeFormat }}",
+                  "containerName": "{{ template "application.name" . }}"
+                }
+              ]{{- with .Values.deployment.fluentdConfigAnnotations.notifications }},
+              "notifications": {
+                {{- with .slack }}
+                "slack": {
+                  "webhookURL": "{{ .webhookURL }}",
+                  "channelName": "{{ .channelName }}"
+                },
+                {{- end }}
+                "key": "{{ .key }}",
+                "pattern": "{{ .pattern }}"
+              }
+              {{- end }}
+            }
+          ]
+{{- end }}
+    spec:
+      {{- if .Values.deployment.hostAliases }}
+      hostAliases:      
+{{ toYaml .Values.deployment.hostAliases | indent 6 }}
+      {{- end }}
+      {{- if .Values.deployment.initContainers }}
+      initContainers:
+  {{- range $key, $value := .Values.deployment.initContainers  }}
+      - name: {{ $key }}
+{{ include "application.tplvalues.render" ( dict "value" $value "context" $ ) | indent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.deployment.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.deployment.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if .Values.deployment.tolerations }}
+      tolerations:
+{{ toYaml .Values.deployment.tolerations | indent 8 -}}
+      {{- end }}
+      {{- if .Values.deployment.affinity }}
+      affinity:
+{{ toYaml .Values.deployment.affinity | indent 8 -}}
+      {{- end }}
+      {{- if .Values.deployment.imagePullSecrets }}      
+      imagePullSecrets:
+      - name: {{ .Values.deployment.imagePullSecrets }}
+      {{- end }}
+      containers:
+      - name: {{ template "application.name" . }}
+        image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
+        imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+        {{- if .Values.deployment.command }}
+        command: {{- include "application.tplvalues.render" (dict "value" .Values.deployment.command "context" $) | nindent 12 }}
+        {{- end }}
+        {{- if .Values.deployment.args }}
+        args: {{- include "application.tplvalues.render" (dict "value" .Values.deployment.args "context" $) | nindent 12 }}
+        {{- end }}
+        {{- if .Values.deployment.ports }}
+        ports:
+{{ toYaml .Values.deployment.ports | indent 10 }}
+        {{- end }}
+        {{- if .Values.deployment.envFrom }}
+        envFrom:
+        {{- range $value := .Values.deployment.envFrom }}
+        {{- if (eq .type "configmap") }}
+        - configMapRef:
+            {{- if .name }}
+            name: {{ include "application.tplvalues.render" ( dict "value" $value.name "context" $ ) }}
+            {{- else if .nameSuffix }}
+            name: {{ template "application.name" $ }}-{{ include "application.tplvalues.render" ( dict "value" $value.nameSuffix "context" $ ) }}
+            {{- else }}
+            name: {{ template "application.name" $ }}
+            {{- end }}
+        {{- end }}
+        {{- if (eq .type "secret") }}
+        - secretRef:
+            {{- if .name }}
+            name: {{ include "application.tplvalues.render" ( dict "value" $value.name "context" $ ) }}
+            {{- else if .nameSuffix }}
+            name: {{ template "application.name" $ }}-{{ include "application.tplvalues.render" ( dict "value" $value.nameSuffix "context" $ ) }}
+            {{- else }}
+            name: {{ template "application.name" $ }}
+            {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.deployment.env }}
+        env:
+        {{- range $key, $value := .Values.deployment.env }}
+        - name: {{ include "application.tplvalues.render" ( dict "value" $key "context" $ ) }}
+{{ include "application.tplvalues.render" ( dict "value" $value "context" $ ) | indent 10 }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.deployment.startupProbe.enabled }}
+        startupProbe:
+          failureThreshold: {{ .Values.deployment.startupProbe.failureThreshold }}
+          periodSeconds: {{ .Values.deployment.startupProbe.periodSeconds }}
+          successThreshold: {{ .Values.deployment.startupProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.deployment.startupProbe.timeoutSeconds }}
+          initialDelaySeconds: {{ .Values.deployment.startupProbe.initialDelaySeconds }}
+          {{- if .Values.deployment.startupProbe.exec }}
+          exec:
+            {{- toYaml .Values.deployment.startupProbe.exec | nindent 12 }}
+          {{- else if .Values.deployment.startupProbe.httpGet }}
+          httpGet:
+            {{- toYaml .Values.deployment.startupProbe.httpGet | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.deployment.livenessProbe.enabled }} 
+        livenessProbe:
+          failureThreshold: {{ .Values.deployment.livenessProbe.failureThreshold }}
+          periodSeconds: {{ .Values.deployment.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.deployment.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
+          initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+          {{- if .Values.deployment.livenessProbe.exec }}
+          exec:
+            {{- toYaml .Values.deployment.livenessProbe.exec | nindent 12 }}
+          {{- else if .Values.deployment.livenessProbe.httpGet }}
+          httpGet:
+            {{- toYaml .Values.deployment.livenessProbe.httpGet | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.deployment.readinessProbe.enabled }} 
+        readinessProbe:
+          failureThreshold: {{ .Values.deployment.readinessProbe.failureThreshold }}
+          periodSeconds: {{ .Values.deployment.readinessProbe.periodSeconds }}
+          successThreshold: {{ .Values.deployment.readinessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.deployment.readinessProbe.timeoutSeconds }}
+          initialDelaySeconds: {{ .Values.deployment.readinessProbe.initialDelaySeconds }}
+          {{- if .Values.deployment.readinessProbe.exec }}
+          exec:
+            {{- toYaml .Values.deployment.readinessProbe.exec | nindent 12 }}
+          {{- else if .Values.deployment.readinessProbe.httpGet }}
+          httpGet:
+            {{- toYaml .Values.deployment.readinessProbe.httpGet | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      {{- if or (.Values.deployment.volumeMounts) (and (eq .Values.persistence.enabled true) (eq .Values.persistence.mountPVC true) )}} 
+        volumeMounts:
+        {{- if (eq .Values.persistence.mountPVC true) }}
+        - mountPath: {{ .Values.persistence.mountPath }}
+          name: {{ template "application.name" . }}-data
+        {{- end }}
+        {{- if .Values.deployment.volumeMounts }}
+        {{- range $key, $value := .Values.deployment.volumeMounts }}
+        - name: {{ $key }}
+{{  include "application.tplvalues.render" ( dict "value" $value "context" $ ) | indent 10 }} 	
+        {{- end }}
+        {{- end }}
+      {{- end }}
+        resources:
+          limits:
+            memory: {{ .Values.deployment.resources.limits.memory }}
+            cpu: {{ .Values.deployment.resources.limits.cpu }}
+          requests:
+            memory: {{ .Values.deployment.resources.requests.memory }}
+            cpu: {{ .Values.deployment.resources.requests.cpu }}
+        {{- if .Values.deployment.additionalContainers }}
+{{ toYaml .Values.deployment.additionalContainers | indent 6 }}
+        {{- end }}
+        {{- if .Values.deployment.securityContext }}
+      securityContext:      
+{{ toYaml .Values.deployment.securityContext | indent 8 }}
+          {{- end }}
+      {{- if .Values.deployment.dnsConfig }}
+      dnsConfig:      
+{{ toYaml .Values.deployment.dnsConfig | indent 8 }}
+          {{- end }}
+      {{- if and (.Values.deployment.volumes) (eq .Values.persistence.enabled true) (eq .Values.persistence.mountPVC true) }} 
+      volumes:
+        {{- if (eq .Values.persistence.mountPVC true) }}
+      - name: {{ template "application.name" . }}-data
+        persistentVolumeClaim:
+          claimName: {{ template "application.name" . }}-data
+        {{- end }}
+        {{- if .Values.deployment.volumes }}
+        {{- range $key, $value := .Values.deployment.volumes  }}
+      - name: {{ $key  }}
+{{ include "application.tplvalues.render" ( dict "value" $value "context" $ ) | indent 8 }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.rbac.serviceAccount.name }}
+      serviceAccountName: {{ .Values.rbac.serviceAccount.name }}
+        {{- else }}
+      serviceAccountName: {{ template "application.name" . }}
+      {{- end }}
+{{- end }}   
+{{- end }}

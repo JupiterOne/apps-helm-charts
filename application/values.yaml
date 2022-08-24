@@ -1,0 +1,631 @@
+##########################################################
+# Name of the application.
+##########################################################
+applicationName: "application"
+
+namespaceOverride: ""
+
+##########################################################
+# Global labels
+# These labels will be added on all resources, 
+# and you can add additional labels from below 
+# on individual resource
+##########################################################
+labels:
+  group: io.jupiterone.platform
+  team: sre
+  
+cronJob: 
+  enabled: false
+  jobs: {}
+    # db-migration:
+    #   schedule: "* * * 8 *"
+    #   env: 
+    #     KEY:
+    #       value: VALUE
+    #   image: 
+    #     repository: docker.io/nginx
+    #     tag: v1.0.0
+    #   command: ["/bin/bash"]
+    #   args: ["-c","sleep 5000"]
+    #   resources:  
+    #     requests:
+    #         memory: 5Gi
+    #         cpu: 1
+  
+##########################################################
+# Deployment
+##########################################################
+deployment:
+  enabled: true
+  # By default deploymentStrategy is set to rollingUpdate with maxSurge of 25% and maxUnavailable of 25%
+  # You can change type to `Recreate` or can uncomment `rollingUpdate` specification and adjust them to your usage.
+  strategy:
+    type: RollingUpdate
+    # rollingUpdate:
+    #   maxSurge: 25%
+    #   maxUnavailable: 25%
+
+  # Select nodes to deploy which matches the following labels  
+  nodeSelector: {}
+
+  # Init containers which runs before the app container
+  hostAliases: {}
+  # - ip: "127.0.0.1"
+  #   hostnames:
+  #   - "foo.local"
+  #   - "bar.local"
+  # - ip: "10.1.2.3"
+  #   hostnames:
+  #   - "foo.remote"
+  #   - "bar.remote"
+
+  # Init containers which runs before the app container
+  initContainers: {}
+#      init-contaner:
+#        image: busybox
+#        imagePullPolicy: IfNotPresent
+#        command: ['/bin/sh']
+
+  # Additional labels for Deployment
+  additionalLabels: {}
+    # key: value
+  
+  # Additional label added on pod which is used in Service's Label Selector
+  podLabels: {}
+    # env: prod
+
+  # Annotations on deployments
+  annotations: {}
+
+  # Additional Pod Annotations added on pod created by this Deployment
+  additionalPodAnnotations: {}
+    # key: value
+  
+  # Annotations for fluentd Configurations
+  fluentdConfigAnnotations: {}
+    # fluentd:
+    #   regex: hello
+    #   timeFormat: world
+
+  # Replicas to be created
+  replicas: 2
+
+  # Secrets used to pull image
+  imagePullSecrets: ""
+
+  # If want to mount Envs from configmap or secret
+  envFrom: {}
+#    production-cm:
+#      type: configmap
+#      nameSuffix: my-configmap
+#    logging-config:
+#      type: configmap
+#      nameSuffix: your-configmap
+#    postgres-config:
+#      type: secret
+#      nameSuffix: postgres
+
+  # Environment variables to be passed to the app container
+  env: {}
+#    ENVIRONMENT:
+#       value: "dev"
+#    FREQUENCY:
+#       valueFrom:
+#          configMapKeyRef:
+#             name: config
+#             key: frequency
+  
+  # Volumes to be added to the pod
+  volumes: {}
+#     configmap-volume:
+#       configMap:
+#         name: '{{ template "application.name" . }}-configmap-nameSuffix'
+#     secret-volume:
+#       secret:
+#         secretName: secret-name
+#     persistent-volume-name:
+#       persistentVolumeClaim:
+#         claimName: claim-name
+
+  # Mount path for Volumes 
+  volumeMounts: {}
+    # volume-name:
+    #    mountPath: path
+    #    subPath: szy
+
+    # volume-name-2:
+    #    mountPath: path-2
+
+  # Taint tolerations for nodes
+  tolerations: {}
+    # - key: "dedicated"
+    #   operator: "Equal"
+    #   value: "app"
+    #   effect: "NoSchedule"
+
+  # Pod affinity and pod anti-affinity allow you to specify rules about how pods should be placed relative to other pods.
+  affinity: {}
+  #  nodeAffinity:
+  #    requiredDuringSchedulingIgnoredDuringExecution:
+  #      nodeSelectorTerms:
+  #      - matchExpressions:
+  #        - key: disktype
+  #          operator: In
+  #          values:
+  #          - ssd
+
+  # Image of the app container
+  image:
+    repository: repository/image-name
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  dnsConfig: {}
+    # options:
+    # - name: ndots
+    #   value: '1'
+  # Startup, Readiness and Liveness probes
+  startupProbe:
+    enabled: false
+    failureThreshold: 30
+    periodSeconds: 10
+    httpGet:
+      path: '/path'
+      port: 8080
+    exec: {}
+
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+    initialDelaySeconds: 10
+    httpGet: 
+      path: '/path'
+      port: 8080
+    exec: {}
+
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+    initialDelaySeconds: 10
+    httpGet: 
+      path: '/path'
+      port: 8080
+    exec: {}
+      
+  # Resources to be defined for pod
+  resources: 
+    limits:
+      memory: 256Mi
+      cpu: 0.5
+    requests:
+      memory: 128Mi
+      cpu: 0.1
+
+  # Add additional containers besides init and app containers
+  additionalContainers: {}
+  # - name: sidecar-contaner
+  #   image: busybox
+  #   imagePullPolicy: IfNotPresent
+  #   command: ['/bin/sh']    
+
+  # Security Context for the pod
+  securityContext: {}
+    # fsGroup: 2000
+  
+  # Command for primary container
+  command: []
+
+  # Args for primary contaner
+  args: []
+
+  # List of ports for the primary container
+  ports: []
+  #- containerPort: 8080
+  #  name: http
+  #  protocol: TCP
+  #- containerPort: 8778
+  #  name: jolokia
+  #  protocol: TCP
+  #- containerPort: 8443
+  #  name: https
+  #  protocol: TCP
+
+##########################################################
+# Add Storage volumes to the pods
+##########################################################
+persistence:
+  enabled: false
+  mountPVC: false
+  mountPath: "/"
+  name: ""
+  accessMode: ReadWriteOnce
+  ## If defined, storageClass: <storageClass>
+  ## If set to "-", storageClass: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClass spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  storageClass: "-"
+  additionalLabels: {}
+    # key: "value"
+  annotations: {}
+  #  "helm.sh/resource-policy": keep
+  storageSize: 8Gi
+  volumeMode: ""
+  volumeName: ""
+
+##########################################################
+# Service object for servicing pods
+##########################################################
+service:
+  enabled: true
+  additionalLabels:
+    # expose: "true"
+
+  annotations: {}
+  
+  ports:
+    - port: 8080
+      name: http
+      protocol: TCP
+      targetPort: 8080
+  type: ClusterIP
+
+##########################################################
+# Ingress object for exposing services
+##########################################################
+ingress:
+  enabled: false
+  
+  # Name of the ingress class
+  ingressClassName: ''
+
+  # Port of the service that serves pods
+  servicePort: http
+
+  #Set pathType: default is ImplementationSpecific; Options: Exact, Prefix
+  pathType: ImplementationSpecific 
+  
+  # List of host addresses to be exposed by this Ingress
+  hosts:
+    - chart-example.local
+
+  # Additional labels for this Ingress
+  additionalLabels: {}
+
+  # Add annotations to this Ingress
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # ingress.kubernetes.io/rewrite-target: /
+    # ingress.kubernetes.io/force-ssl-redirect: true
+
+  # TLS details for this Ingress
+  tls: {}
+    # Secrets must be manually created in the namespace.
+    # - secretName: chart-example-tls
+    #   hosts:
+    #     - chart-example.local
+
+##########################################################
+# Role Based Access Control (RBAC)
+##########################################################
+rbac:
+  enabled: true
+
+  # Service Account to use by pods
+  serviceAccount:
+    enabled: false
+    name: ""
+
+    # Additional Labels on service account
+    additionalLabels: {}
+      # key: value
+    
+    # Annotations on service account 
+    annotations: {}
+      # key: value
+
+  # Create Roles (Namespaced)
+  roles: {}
+  # - name: configmaps
+  #   rules:
+  #   - apiGroups:
+  #     - ""
+  #     resources:
+  #     - configmaps
+  #     verbs:
+  #     - get
+  # - name: secrets
+  #   rules:
+  #   - apiGroups:
+  #     - ""
+  #     resources:
+  #     - secrets
+  #     verbs:
+  #     - get
+
+##########################################################
+# ConfigMaps
+##########################################################
+configMap:
+  enabled: false
+  additionalLabels: {}
+    # key: value
+  annotations: {}
+    # key: value
+  files: {}
+    # nameSuffix of configMap
+#    code-config:
+#       key1: value1
+#       key2: value2
+#    dev-config:
+#       key1: value1
+#       key2: value2
+
+##########################################################
+# Secrets
+##########################################################
+secret:
+  enabled: false
+  additionalLabels: {}
+    # key: value
+  annotations: {}
+    # key: value
+  files: {}
+#  nameSuffix of Secret
+#   credentials:
+#     data:
+#       secretKey1: secretValue1
+#       secretKey2: secretValue2
+#   password:
+#     data:
+#       secretKey1: secretValue1
+#       secretKey2: secretValue2
+
+##########################################################
+# HPA - Horizontal Pod Autoscaling
+##########################################################
+autoscaling:
+# enabled is a boolean flag for enabling or disabling autoscaling 
+  enabled: false
+# additionalLabels defines additional labels
+  additionalLabels: {}
+    # key: value
+# annotations defines annotations in key value pair
+  annotations: {}
+    # key: value
+# minReplicas sets the minimum number of replicas
+  minReplicas: 1
+# maxReplicas sets the maximum number of replicas
+  maxReplicas: 10
+# metrics is the list of metrics used for hpa
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target: 
+         type: Utilization
+         averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target: 
+         type: Utilization
+         averageUtilization: 60
+
+##########################################################
+# Certficate CRD to generate the certificate
+##########################################################
+certificate:
+  enabled: false
+  
+  # Additional labels
+  additionalLabels: {}
+    # key: value
+
+  # Additional annotations
+  annotations: {}
+    # key: value
+
+  secretName: tls-cert
+  duration: 8760h0m0s # 1 year
+  renewBefore: 720h0m0s # 30d
+  subject: {}
+  #  organizations:
+  #    - jupiterone
+  #  countries:
+  #    - US
+  #  organizationalUnits:
+  #    - '{{ template "application.namespace" . }}'
+  #  localities:
+  #    - Morrisville
+  #  provinces:
+  #    - North Carolina
+  commonName: admin-app
+  keyAlgorithm: rsa
+  keyEncoding: pkcs1
+  keySize: 2048
+  isCA: false
+  usages: []
+  #  - digital signature
+  #  - client auth
+  dnsNames: []
+  #  - admin-app
+  ipAddresses: []
+  #  - 192.168.0.5
+  uriSANs: []
+  #  - spiffe://cluster.local/ns/sandbox/sa/example
+  emailSANs: []
+  #  - emailSubjectAltNames
+  privateKey:
+    enabled: false
+    rotationPolicy: Always
+  issuerRef:
+    name: ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    kind: ClusterIssuer
+    group: #cert-manager.io
+  keystores:
+    enabled: false
+    pkcs12:
+      create: true
+      key: test_key
+      name: test-creds
+    jks:
+      create: false
+      key: test_key
+      name: test-creds
+
+##########################################################
+# Network Policy
+##########################################################
+networkPolicy: 
+  enabled: false
+  additionalLabels: {}
+  #   key: value
+  annotations: {}
+  #   key: value
+  ingress: []
+  # - from:
+  #   - ipBlock:
+  #       cidr: 172.17.0.0/16
+  #       except:
+  #       - 172.17.1.0/24
+  #   - namespaceSelector:
+  #       matchLabels:
+  #         project: myproject
+  #   - podSelector:
+  #       matchLabels:
+  #         role: frontend
+  #   ports:
+  #   - protocol: TCP
+  #     port: 6379
+  egress: []
+  #   - to:
+  #     - ipBlock:
+  #         cidr: 10.0.0.0/24
+  #     ports:
+  #     - protocol: TCP
+  #       port: 5978
+
+##########################################################
+# Pod disruption budget - PDB
+##########################################################
+pdb:
+  enabled: false
+  minAvailable: 1
+# maxUnavailable: 1
+
+##########################################################
+# Service Monitor to collect Prometheus metrics
+##########################################################
+serviceMonitor:
+  enabled: false
+  
+  # Additional labels
+  additionalLabels: {}
+    # key: value
+
+  # Additional annotations
+  annotations: {}
+    # key: value
+
+  # List of the endpoints of service from which prometheus will scrape data
+  endpoints:
+  - interval: 5s
+    path: /metrics
+    port: http
+
+##########################################################
+# PrometheusRule object for defining application 
+# alerting rules
+##########################################################
+prometheusRule:
+  enabled: false
+  
+  # PrometheusRule labels
+  additionalLabels: {}
+    # prometheus: enabled
+    # role: alert-rules
+
+  # Groups with alerting rules. Read more here [https://docs.openshift.com/container-platform/4.7/rest_api/monitoring_apis/prometheusrule-monitoring-coreos-com-v1.html]
+
+  groups: []
+    # - name: example-app-uptime
+    #   rules:
+    #     - alert: ExampleAppDown
+    #       annotations:
+    #         message: >-
+    #           The Example App is Down (Test Alert)
+    #       expr: up{namespace="test-app"} == 0
+    #       for: 1m
+    #       labels:
+    #         severity: critical
+
+##########################################################
+# AlertmanagerConfig object for defining application 
+# specific alertmanager configurations
+##########################################################
+alertmanagerConfig:
+  enabled: false
+  
+  # AlertmanagerConfig selectionLabels to specify label to be picked up by Alertmanager to add it to base config. Read more about it at [https://docs.openshift.com/container-platform/4.7/rest_api/monitoring_apis/alertmanager-monitoring-coreos-com-v1.html] under .spec.alertmanagerConfigSelector
+  selectionLabels:
+    alertmanagerConfig: "workload"
+
+  # AlertmanagerConfig spec, read details here [https://docs.openshift.com/container-platform/4.7/rest_api/monitoring_apis/alertmanagerconfig-monitoring-coreos-com-v1alpha1.html]
+  spec:
+    route: {}
+    #   receiver: "null"
+    #   groupBy:
+    #   - job
+    #   routes:
+    #   - receiver: "null"
+    #     groupBy:
+    #     - alertname
+    #     - severity
+    #     continue: true
+    #   groupWait: 30s
+    #   groupInterval: 5m
+    #   repeatInterval: 12h
+    receivers: []
+    # - name: "null"
+    inhibitRules: []
+    # - sourceMatch:
+    #     severity: 'critical'
+    #   targetMatch:
+    #     severity: 'warning'
+    #   equal: ['cluster', 'service']
+
+##########################################################
+# grafanaDashboard object for defining application 
+# Grafana Dashboard
+##########################################################
+grafanaDashboard:
+  enabled: false
+  
+  # GrafanaDashboard additonal labels
+  additionalLabels: {}
+    # grafanaDashboard: grafana-operator
+
+  # GrafanaDashboard annotations
+  annotations: {}
+    # key: value
+  
+  # GrafanaDashboard contents
+  # this includes pairs of dashboard name and associated json content
+  contents:
+    myprimarygrafanadashboard: |-
+      {
+        "data"
+      }
+    mysecondarygrafanadashboard: |-
+      {
+        "data"
+      }
