@@ -1,33 +1,26 @@
 name: Push
-
 concurrency: 
- group: push_on_master
+ group: push_on_main
  cancel-in-progress: false
-
 on:
   push:
     branches:
-      - master
+      - main
     paths-ignore:
     - 'README.md'      
-
 env:
   CHART_NAME: "application"
-
 jobs:
   build:
     name: Build
     if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
     runs-on: ubuntu-latest
-    
     steps:
-
     - name: Check out code
       uses: actions/checkout@v2
       with:
         persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
         fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
-
     # Generate tag for chart without "v" prefix
     - name: Generate Tag
       id: generate_tag
@@ -37,25 +30,21 @@ jobs:
         WITH_V: false
         DEFAULT_BUMP: patch
         DRY_RUN: true
-
     # Update chart tag to the latest semver tag
     - name: Update Chart Version
       env:
         VERSION: ${{ steps.generate_tag.outputs.new_tag }}
       run: |
         make bump-chart
-
     # Set Up Helm
     - name: Set up Helm
       uses: azure/setup-helm@v1
       with:
         version: v3.7.0
-
     # Lint
     - name: Helm Lint
       run: |
         helm lint ${CHART_NAME}
-
     # Dry run to ensure that manifests are generated successfully 
     - name: Dry Run Chart
       run: |
@@ -74,7 +63,6 @@ jobs:
         linting: off 
         commit_username: jupiterone-helm-chart-bot
         commit_email: sre@jupiterone.io
-
     # Commit back changes
     - name: Commit files
       run: |
@@ -83,7 +71,6 @@ jobs:
         git status 
         git add application/Chart.yaml
         git commit -m "[skip-ci] Update artifacts" 
-
     # Push Chart.yaml with Updated Version
     - name: Push changes
       shell: bash {0}
@@ -124,13 +111,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WITH_V: true
         DEFAULT_BUMP: patch
-
     - name: Clean up KUBECONFIG
       if: always() 
       run: |
          rm $KUBECONFIG
-    
-
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
       if: always() # Pick up events even if the job fails or is canceled.

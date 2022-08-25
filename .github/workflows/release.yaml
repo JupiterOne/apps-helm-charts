@@ -3,18 +3,15 @@ on:
   push:
     tags:
       - "v*"
-
 jobs:
   build:
     name: Release
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0 # See: https://goreleaser.com/ci/actions/
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -25,7 +22,6 @@ jobs:
           release_name: ${{ github.ref }}
           draft: false
           prerelease: false
-
       - name: Notify Slack
         uses: 8398a7/action-slack@v3
         if: always()
