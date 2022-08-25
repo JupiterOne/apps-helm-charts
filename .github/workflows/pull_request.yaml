@@ -57,7 +57,7 @@ jobs:
         allow-repeats: false
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
-      if: always() # Pick up events even if the job fails or is canceled.
+      if: failure() # Only alert on failure
       with:
         status: ${{ job.status }}
         fields: repo,author,action,eventName,ref,workflow
