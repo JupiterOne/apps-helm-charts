@@ -53,7 +53,7 @@ jobs:
     - name: Publish Helm chart
       uses: stefanprodan/helm-gh-pages@master
       with:
-        branch: master
+        branch: main
         repository: apps-helm-charts
         target_dir: docs
         token: ${{ secrets.GITHUB_TOKEN }}
