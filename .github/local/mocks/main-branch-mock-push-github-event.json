@@ -1,0 +1,11 @@
+{
+  "head": {
+    "ref": "main"
+  },
+  "base": {
+    "ref": "main"
+  },
+  "commits": ["cb19279c88bec3498e1c56f32c6e768a93d59303", "6d1ceedddf7c55191202e470e80648894fb103b8"],
+  "size": 2,
+  "actor": "github-helm-chart-updater"
+}
