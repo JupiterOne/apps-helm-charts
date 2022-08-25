@@ -69,7 +69,7 @@ jobs:
         git config --local user.email "sre@jupiterone.com"
         git config --local user.name "jupiterone-helm-chart-bot"
         git status 
-        git add application/Chart.yaml
+        git add ${CHART_PATH}/Chart.yaml
         git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.semVer }}"     
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
