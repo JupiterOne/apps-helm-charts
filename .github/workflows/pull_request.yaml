@@ -1,12 +1,14 @@
 name: Pull Request
 on:
-  pull_request_target:
+  pull_request:
+    types: [opened, synchronize, edited, ready_for_review]
     branches:
       - main
-    paths-ignore:
-    - 'README.md'
+
+  workflow_dispatch:
 env:
   CHART_NAME: "application"
+  CHART_PATH: "charts/application"
 jobs:
   build:
     runs-on: ubuntu-latest 
@@ -29,15 +31,15 @@ jobs:
     # Lint
     - name: Helm Lint
       run: |
-        helm lint ${CHART_NAME}
+        helm lint ${CHART_PATH}
     # Dry run to ensure that manifests are generated successfully 
     - name: Dry Run Chart
       run: |
-        helm install ${CHART_NAME} ${CHART_NAME} -f charts/${CHART_NAME}/values.yaml -n helm-chart-pipeline-test --dry-run --debug
+        helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n helm-chart-pipeline-test --dry-run --debug
     # package
     - name: Helm Package
       run: |
-        helm package ${CHART_NAME}
+        helm package ${CHART_PATH}
     - name: Comment on PR
       uses: mshick/add-pr-comment@v1
       env:
@@ -55,7 +57,7 @@ jobs:
         allow-repeats: false
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
-      if: always() # Pick up events even if the job fails or is canceled.
+      if: failure() # Only alert on failure
       with:
         status: ${{ job.status }}
         fields: repo,author,action,eventName,ref,workflow

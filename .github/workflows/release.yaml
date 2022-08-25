@@ -9,11 +9,12 @@ on:
 env:
   CHART_NAME: "application"
   CHART_PATH: "charts/application"
+  MOST_RECENT_GITHUB_COMMIT_NUM: ${github.event.size}-1 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    if: "! contains(github.event.commits.$${github.event.size - 1}}.message, '[skip-ci]')"    
+    if: "! contains(github.event.commits.${MOST_RECENT_GITHUB_COMMIT_NUM}.message, '[skip-ci]')"    
 
     steps:
     - name: Check out code
@@ -70,13 +71,25 @@ jobs:
         git config --local user.name "jupiterone-helm-chart-bot"
         git status 
         git add ${CHART_PATH}/Chart.yaml
-        git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.semVer }}"     
-    - name: Notify Slack
+        git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.semVer }}"
+    - name: Notify Slack - Failure
       uses: 8398a7/action-slack@v3
-      if: always() # Pick up events even if the job fails or is canceled.
+      if: failure() # Only alert on failure
       with:
+        text: "Oh barnacles. It looks like a failure occurred when releasing helm chart apps-helm-charts/application on version: ${{ steps.gitversion.outputs.semVer }}"
+        status: ${{ job.status }}
+        fields: repo,author,action,eventName,ref,workflow
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SRE_TEAM_SLACK_WEBHOOK }}    
+    - name: Notify Slack - Success
+      uses: 8398a7/action-slack@v3
+      if: success() # Only alert on success
+      with:
+        text: "Just a heads up, apps-helm-charts/application has published a new helm chart release, ${{ steps.gitversion.outputs.semVer }}, that is now available at: https://jupiterone.github.io/apps-helm-charts"
         status: ${{ job.status }}
         fields: repo,author,action,eventName,ref,workflow
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SLACK_WEBHOOK_URL: ${{ secrets.SRE_TEAM_SLACK_WEBHOOK }}
+
