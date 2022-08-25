@@ -13,7 +13,6 @@ env:
 jobs:
   build:
     name: Build
-    if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
@@ -62,11 +61,11 @@ jobs:
         owner: JupiterOne
         linting: off 
         commit_username: jupiterone-helm-chart-bot
-        commit_email: sre@jupiterone.io
+        commit_email: sre@jupiterone.com
     # Commit back changes
     - name: Commit files
       run: |
-        git config --local user.email "sre@jupiterone.io"
+        git config --local user.email "sre@jupiterone.com"
         git config --local user.name "jupiterone-helm-chart-bot"
         git status 
         git add application/Chart.yaml
@@ -75,7 +74,7 @@ jobs:
     - name: Push changes
       shell: bash {0}
       run: |
-        git config --local user.email "sre@jupiterone.io"
+        git config --local user.email "sre@jupiterone.com"
         git config --local user.name "jupiterone-helm-chart-bot"
         git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
         git push origin
