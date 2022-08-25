@@ -1,0 +1,17 @@
+apiVersion: v1
+name: application
+description: Re-usable Helm charts for different application deployment patterns at JupiterOne
+version: 0.0.1
+keywords:
+  - kubernetes
+  - helm
+  - jupiterone
+  - sre
+  - bestpractices
+  - designpatterns
+  - templating
+  - appdeployments
+home: https://github.com/JupiterOne/apps-helm-charts
+maintainers:
+- name: SRE
+  email: sre@jupiterone.com
