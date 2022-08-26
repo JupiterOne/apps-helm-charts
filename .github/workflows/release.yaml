@@ -1,106 +1,40 @@
-name: Push
-concurrency: 
- group: push_on_main
- cancel-in-progress: false
+name: release
 on:
   push:
-    branches:
-      - main    
-env:
-  CHART_NAME: "application"
-  CHART_PATH: "charts/application"
-  SHOULD_UPDATE_CHART_VERSION: true
+    tags: '*'
 jobs:
   release:
-    permissions:
-      contents: write
-    name: Release
     runs-on: ubuntu-latest
-    if: "! contains(github.event.head_commit.message, '[skip-ci]')"
     steps:
-    - name: Check out code
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Configure Git
-      run: |
-        git config user.name "$GITHUB_ACTOR"
-        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"    
-    - name: Setup Ephemeral Kubernetes Testing Cluster
-      if: always()
-      uses: engineerd/setup-kind@v0.5.0
-      with:
-        version: "v0.11.1"   
-    - uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '6.0.x'     
-    # Generate tag for chart without "v" prefix
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.7
-      with:
-        versionSpec: '5.x'
-    - name: Determine Version
-      id:   gitversion
-      uses: gittools/actions/gitversion/execute@v0.9.7
-      with:
-        useConfigFile: true
-        configFilePath: GitVersion.yml
-    - name: Display GitVersion outputs
-      run: |
-        echo "SemVer: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-    # Update chart tag to the latest semver tag
-    - name: Update Chart Version
-      env:
-        VERSION: ${{ steps.gitversion.outputs.majorMinorPatch }}
-      run: |
-        make bump-chart
-    # Set Up Helm
-    - name: Set up Helm
-      uses: azure/setup-helm@v1
-      with:
-        version: v3.7.0
-    # Lint
-    - name: Helm Lint
-      run: |
-        helm lint ${CHART_PATH}
-    # Dry run to ensure that manifests are generated successfully 
-    - name: Dry Run Chart
-      run: |
-        helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug  
-    # Publish helm chart
-    - name: Run chart-releaser
-      uses: helm/chart-releaser-action@v1.4.0
-      env:
-        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-    - name: Commit files
-      if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
-      run: |
-        git status 
-        git add charts/application/Chart.yaml
-        git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"  
-        git push origin main
-    - name: Clean Up
-      if: failure()
-      run: |
-        kind delete cluster    
-    - name: Notify Slack - Failure
-      uses: 8398a7/action-slack@v3
-      if: failure() # Only alert on failure
-      with:
-        text: "Oh barnacles. It looks like a failure occurred when releasing helm chart apps-helm-charts/application on version: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-        status: ${{ job.status }}
-        fields: repo,author,action,eventName,ref,workflow
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SLACK_WEBHOOK_URL: ${{ secrets.SRE_TEAM_SLACK_WEBHOOK }}    
-    - name: Notify Slack - Success
-      uses: 8398a7/action-slack@v3
-      if: success() # Only alert on success
-      with:
-        text: "Just a heads up, apps-helm-charts/application has published a new helm chart release, ${{ steps.gitversion.outputs.majorMinorPatch }}, that is now available at: https://jupiterone.github.io/apps-helm-charts"
-        status: ${{ job.status }}
-        fields: repo,author,action,eventName,ref,workflow
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SLACK_WEBHOOK_URL: ${{ secrets.SRE_TEAM_SLACK_WEBHOOK }}
-
+      - uses: actions/checkout@v2
+      - uses: tenhaus/get-release-or-tag@v2
+        id: tag
+      - name: Publish Helm charts
+        uses: stefanprodan/helm-gh-pages@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          charts_dir: charts
+          charts_url: https://jupiterone.github.io/apps-helm-charts
+          branch: gh-pages
+          target_dir: .
+          chart_version: ${{ steps.tag.outputs.tag }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.tag.outputs.tag }}
+          release_name: v${{ steps.tag.outputs.tag }}
+          draft: false
+          prerelease: false
+      - name: Notify Slack - Success
+        uses: 8398a7/action-slack@v3
+        if: success() # Only alert on success
+        with:
+          text: "Just a heads up, apps-helm-charts/application has published a new helm chart release, ${{ steps.gitversion.outputs.majorMinorPatch }}, that is now available at: https://jupiterone.github.io/apps-helm-charts"
+          status: ${{ job.status }}
+          fields: repo,author,action,eventName,ref,workflow
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SRE_TEAM_SLACK_WEBHOOK }}    
