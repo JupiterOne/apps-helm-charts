@@ -23,11 +23,19 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
+    - name: Get token
+      id: get_token
+      uses: machine-learning-apps/actions-app-token@master
+      with:
+        APP_ID: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_APP_ID }}
+        APP_PEM: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_PRIVATE_KEY }}
     - name: Configure Git
       run: |
-        git remote set-url origin https://x-access-token:${{ secrets.AUTO_GITHUB_PAT_TOKEN }}@github.com/$GITHUB_REPOSITORY
-        git config user.name "j1-github-automation"
-        git config user.email "j1-github-automation@users.noreply.github.com"    
+        git remote set-url origin https://x-access-token:${{env.TOKEN}}@github.com/$GITHUB_REPOSITORY
+        git config user.name "j1-sre-github-automation"
+        git config user.email "j1-sre-github-automation@users.noreply.github.com"
+      env: 
+        TOKEN: ${{ steps.get_token.outputs.app_token }}
     - name: Setup Ephemeral Kubernetes Testing Cluster
       if: always()
       uses: engineerd/setup-kind@v0.5.0
