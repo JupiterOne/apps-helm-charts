@@ -32,8 +32,8 @@ jobs:
     - name: Configure Git
       run: |
         git remote set-url origin https://x-access-token:${{env.TOKEN}}@github.com/$GITHUB_REPOSITORY
-        git config user.name "j1-github-automation"
-        git config user.email "j1-github-automation@users.noreply.github.com"
+        git config user.name "j1-sre-github-automation"
+        git config user.email "j1-sre-github-automation@users.noreply.github.com"
       env: 
         TOKEN: ${{ steps.get_token.outputs.app_token }}
     - name: Setup Ephemeral Kubernetes Testing Cluster
