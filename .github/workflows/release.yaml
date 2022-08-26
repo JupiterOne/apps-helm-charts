@@ -1,4 +1,4 @@
-name: Push
+name: Release
 concurrency: 
  group: push_on_main
  cancel-in-progress: false
@@ -73,14 +73,14 @@ jobs:
         git status 
         git add charts/application/Chart.yaml
         git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+        git remote set-url origin https://x-access-token:${{ secrets.AUTO_GITHUB_PAT_TOKEN }}@github.com/$GITHUB_REPOSITORY
         git push origin main
         echo "GITHUB_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
     - name: Tag Version
       id: tag_version
       uses: mathieudutour/github-tag-action@v6.0
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.AUTO_GITHUB_PAT_TOKEN }}
         custom_tag: ${{ steps.gitversion.outputs.majorMinorPatch }}
         tag_prefix: v
         commit_sha: ${{ env.GITHUB_SHA }}
