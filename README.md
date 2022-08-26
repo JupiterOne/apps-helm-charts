@@ -34,7 +34,7 @@ To uninstall the chart:
 
 ## Installing Local Tooling - Testing Github Actions
 
-  brew install 
+  brew install act
 
 ## Testing Github Action - PR
 
