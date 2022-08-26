@@ -74,7 +74,7 @@ jobs:
         git add charts/application/Chart.yaml
         git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"
         git remote set-url origin https://x-access-token:${{ secrets.AUTO_GITHUB_PAT_TOKEN }}@github.com/$GITHUB_REPOSITORY
-        git push origin main
+        git push origin
         echo "GITHUB_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
     - name: Tag Version
       id: tag_version
