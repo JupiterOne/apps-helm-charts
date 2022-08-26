@@ -20,6 +20,30 @@ To uninstall the chart:
 
     helm delete <name-of-the-chart> -n namespace
 
+## Testing - Configuring Env/Secrets File
+
+  vi ~/.env
+
+  GITHUB_TOKEN=yourgithubtoken
+  SRE_TEAM_SLACK_WEBHOOK=""
+
+  vi ~/.secrets
+
+  GITHUB_TOKEN=yourgithubtoken
+  SRE_TEAM_SLACK_WEBHOOK=""
+
+## Installing Local Tooling - Testing Github Actions
+
+  brew install act
+
+## Testing Github Action - PR
+
+  act pull_request --container-architecture linux/amd64 --env-file ~/.env --secret-file ~/.secrets
+
+## Testing Github Action - Main
+
+  act push --container-architecture linux/amd64 --env-file ~/.env --secret-file ~/.secrets --eventpath .github/local/mocks/main-branch-mock-push-github-event.json
+
 ## Paramaters
 
 | Name | Description                                                                                | Value                                       |

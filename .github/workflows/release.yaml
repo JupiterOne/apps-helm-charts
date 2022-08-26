@@ -9,23 +9,31 @@ on:
 env:
   CHART_NAME: "application"
   CHART_PATH: "charts/application"
-  MOST_RECENT_GITHUB_COMMIT_NUM: ${github.event.size}-1 
+  SHOULD_UPDATE_CHART_VERSION: true
 jobs:
-  build:
-    name: Build
+  release:
+    permissions:
+      contents: write
+    name: Release
     runs-on: ubuntu-latest
-    if: "! contains(github.event.commits.${MOST_RECENT_GITHUB_COMMIT_NUM}.message, '[skip-ci]')"    
-
+    if: "! contains(github.event.head_commit.message, '[skip-ci]')"
     steps:
     - name: Check out code
       uses: actions/checkout@v2
       with:
-        persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
-        fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
+        fetch-depth: 0
+    - name: Configure Git
+      run: |
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"    
     - name: Setup Ephemeral Kubernetes Testing Cluster
+      if: always()
       uses: engineerd/setup-kind@v0.5.0
       with:
-        version: "v0.11.1"    
+        version: "v0.11.1"   
+    - uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '6.0.x'     
     # Generate tag for chart without "v" prefix
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.7
@@ -39,12 +47,11 @@ jobs:
         configFilePath: GitVersion.yml
     - name: Display GitVersion outputs
       run: |
-        echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-        echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+        echo "SemVer: ${{ steps.gitversion.outputs.majorMinorPatch }}"
     # Update chart tag to the latest semver tag
     - name: Update Chart Version
       env:
-        VERSION: ${{ steps.gitversion.outputs.semVer }}
+        VERSION: ${{ steps.gitversion.outputs.majorMinorPatch }}
       run: |
         make bump-chart
     # Set Up Helm
@@ -59,24 +66,27 @@ jobs:
     # Dry run to ensure that manifests are generated successfully 
     - name: Dry Run Chart
       run: |
-        helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug
+        helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug  
     # Publish helm chart
     - name: Run chart-releaser
       uses: helm/chart-releaser-action@v1.4.0
       env:
         CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     - name: Commit files
+      if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
       run: |
-        git config --local user.email "sre@jupiterone.com"
-        git config --local user.name "jupiterone-helm-chart-bot"
         git status 
         git add ${CHART_PATH}/Chart.yaml
-        git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.semVer }}"
+        git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"     
+    - name: Clean Up
+      if: failure()
+      run: |
+        kind delete cluster    
     - name: Notify Slack - Failure
       uses: 8398a7/action-slack@v3
       if: failure() # Only alert on failure
       with:
-        text: "Oh barnacles. It looks like a failure occurred when releasing helm chart apps-helm-charts/application on version: ${{ steps.gitversion.outputs.semVer }}"
+        text: "Oh barnacles. It looks like a failure occurred when releasing helm chart apps-helm-charts/application on version: ${{ steps.gitversion.outputs.majorMinorPatch }}"
         status: ${{ job.status }}
         fields: repo,author,action,eventName,ref,workflow
       env:
@@ -86,7 +96,7 @@ jobs:
       uses: 8398a7/action-slack@v3
       if: success() # Only alert on success
       with:
-        text: "Just a heads up, apps-helm-charts/application has published a new helm chart release, ${{ steps.gitversion.outputs.semVer }}, that is now available at: https://jupiterone.github.io/apps-helm-charts"
+        text: "Just a heads up, apps-helm-charts/application has published a new helm chart release, ${{ steps.gitversion.outputs.majorMinorPatch }}, that is now available at: https://jupiterone.github.io/apps-helm-charts"
         status: ${{ job.status }}
         fields: repo,author,action,eventName,ref,workflow
       env:
