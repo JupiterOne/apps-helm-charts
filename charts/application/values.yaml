@@ -320,35 +320,26 @@ rbac:
 
   # Service Account to use by pods
   serviceAccount:
-    enabled: false
-    name: ""
-
-    # Additional Labels on service account
-    additionalLabels: {}
-      # key: value
-    
-    # Annotations on service account 
-    annotations: {}
-      # key: value
+    enabled: true
 
   # Create Roles (Namespaced)
-  roles: {}
-  # - name: configmaps
-  #   rules:
-  #   - apiGroups:
-  #     - ""
-  #     resources:
-  #     - configmaps
-  #     verbs:
-  #     - get
-  # - name: secrets
-  #   rules:
-  #   - apiGroups:
-  #     - ""
-  #     resources:
-  #     - secrets
-  #     verbs:
-  #     - get
+  roles:
+  - name: configmaps
+    rules:
+    - apiGroups:
+      - ""
+      resources:
+      - configmaps
+      verbs:
+      - get
+  - name: secrets
+    rules:
+    - apiGroups:
+      - ""
+      resources:
+      - secrets
+      verbs:
+      - get
 
 ##########################################################
 # ConfigMaps
