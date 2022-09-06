@@ -103,7 +103,7 @@ jobs:
       run: |
         helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug
     - name: Run chart-releaser
-      uses: helm/chart-releaser-action@v1.0.0
+      uses: helm/chart-releaser-action@v1.4.0
       with: 
         config: cr.yaml
       env:
