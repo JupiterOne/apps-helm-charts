@@ -43,15 +43,15 @@ jobs:
         gpg --export >~/.gnupg/pubring.gpg
         gpg --batch --pinentry-mode=loopback --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ~/.gnupg/secring.gpg --export-secret-key j1-sre-github-automation      
     - name: Prepare GPG key
-        run: |
-          gpg_dir=~/.gnupg
-          passphrase_file="$gpg_dir/passphrase"
-          keyring="$gpg_dir/secring.gpg"
-          echo "$GPG_PASSPHRASE" > "$passphrase_file"
-          echo "CR_PASSPHRASE_FILE=$passphrase_file" >> "$GITHUB_ENV"
-          echo "CR_KEYRING=$keyring" >> "$GITHUB_ENV"
-        env:
-          GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"    
+      run: |
+        gpg_dir=~/.gnupg
+        passphrase_file="$gpg_dir/passphrase"
+        keyring="$gpg_dir/secring.gpg"
+        echo "$GPG_PASSPHRASE" > "$passphrase_file"
+        echo "CR_PASSPHRASE_FILE=$passphrase_file" >> "$GITHUB_ENV"
+        echo "CR_KEYRING=$keyring" >> "$GITHUB_ENV"
+      env:
+        GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"    
     - name: List GPG keys
       run: gpg -K
     - name: Configure Git
