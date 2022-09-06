@@ -5,7 +5,8 @@ concurrency:
 on:
   push:
     branches:
-      - main    
+      - main 
+  workflow_dispatch:       
 env:
   CHART_NAME: "application"
   CHART_PATH: "charts/application"
@@ -29,6 +30,30 @@ jobs:
       with:
         APP_ID: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_APP_ID }}
         APP_PEM: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_PRIVATE_KEY }}
+    - name: Import GPG key
+      id: import_gpg
+      uses: crazy-max/ghaction-import-gpg@v5
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_PASSPHRASE }}
+        git_user_signingkey: true
+        git_commit_gpgsign: true
+    - name: Convert gpg keys to legacy format (needed by helm)
+      run: |
+        gpg --export >~/.gnupg/pubring.gpg
+        gpg --batch --pinentry-mode=loopback --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ~/.gnupg/secring.gpg --export-secret-key j1-sre-github-automation      
+    - name: Prepare GPG key
+        run: |
+          gpg_dir=~/.gnupg
+          passphrase_file="$gpg_dir/passphrase"
+          keyring="$gpg_dir/secring.gpg"
+          echo "$GPG_PASSPHRASE" > "$passphrase_file"
+          echo "CR_PASSPHRASE_FILE=$passphrase_file" >> "$GITHUB_ENV"
+          echo "CR_KEYRING=$keyring" >> "$GITHUB_ENV"
+        env:
+          GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"    
+    - name: List GPG keys
+      run: gpg -K
     - name: Configure Git
       run: |
         git remote set-url origin https://x-access-token:${{env.TOKEN}}@github.com/$GITHUB_REPOSITORY
@@ -79,8 +104,10 @@ jobs:
         helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug
     - name: Run chart-releaser
       uses: helm/chart-releaser-action@v1.0.0
+      with: 
+        config: cr.yaml
       env:
-        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"    
+        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     - name: Commit and push files
       if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
       run: |
