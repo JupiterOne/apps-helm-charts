@@ -56,7 +56,6 @@ jobs:
       run: gpg -K
     - name: Configure Git
       run: |
-        git remote set-url origin https://x-access-token:${{env.TOKEN}}@github.com/$GITHUB_REPOSITORY
         git config user.name "j1-sre-github-automation"
         git config user.email "j1-sre-github-automation@users.noreply.github.com"
       env: 
@@ -111,11 +110,14 @@ jobs:
     - name: Commit and push files
       if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
       run: |
-        git status 
+        git status
+        git remote set-url origin https://x-access-token:${{env.TOKEN}}@github.com/$GITHUB_REPOSITORY
         git add charts/application/Chart.yaml
         git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"
         git push origin
         echo "GITHUB_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+      env: 
+        TOKEN: ${{ steps.get_token.outputs.app_token }}  
     - name: Tag Version
       id: tag_version
       if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
