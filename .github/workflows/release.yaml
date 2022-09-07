@@ -116,6 +116,8 @@ jobs:
         git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"
         git push origin
         echo "GITHUB_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+      env: 
+        TOKEN: ${{ steps.get_token.outputs.app_token }}  
     - name: Tag Version
       id: tag_version
       if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
