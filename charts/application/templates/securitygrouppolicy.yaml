@@ -1,0 +1,16 @@
+{{- if and .Values.securityGroupPolicy.enabled }}
+apiVersion: vpcresources.k8s.aws/v1beta1
+kind: SecurityGroupPolicy
+metadata:
+  name: {{ .Values.securityGroupPolicy.name }}
+  namespace: {{ template "application.namespace" . }}
+spec:
+  podSelector:
+    matchLabels:
+      role: {{ .Values.securityGroupPolicy.podSelectorRole }}
+  securityGroups:
+    groupIds:
+    {{- range $value := .Values.securityGroupPolicy.securityGroupIds }}
+      - {{ $value }}
+    {{- end }}
+{{- end }}

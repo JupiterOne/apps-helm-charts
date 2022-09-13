@@ -620,3 +620,10 @@ grafanaDashboard:
       {
         "data"
       }
+# This deploys an AWS EKS security group policy, which allows us to set network security group rules on a per-pod basis
+securityGroupPolicy:
+  enabled: false
+  name: ""
+  podSelectorRole: ""
+  securityGroupIds: []
+
