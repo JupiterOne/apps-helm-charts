@@ -1,6 +1,6 @@
 {{- if .Values.pdb.enabled }}
 {{- if or .Values.pdb.minAvailable .Values.pdb.maxUnavailable }}
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   labels:
