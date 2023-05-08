@@ -26,6 +26,7 @@ jobs:
     # Check K8s deprecations
     - name: Setup Pluto
       uses: FairwindsOps/pluto/github-action@master
+    - name: Run Pluto
       run: pluto detect-files -d pkg/finder/testdata
     # Set Up Helm
     - name: Set up Helm
