@@ -1,7 +1,7 @@
 apiVersion: v1
 name: application
 description: Re-usable Helm charts for different application deployment patterns at JupiterOne
-version: 1.0.14
+version: 1.0.15
 keywords:
   - kubernetes
   - helm
