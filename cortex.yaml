@@ -1,24 +1,12 @@
 openapi: 3.0.1
 info:
   title: apps-helm-charts
-  description: >-
-    Reusable Helm charts for different application deployment patterns at
-    JupiterOne
+  description: Automatically generated package.json, please edit manually
   x-cortex-git:
     github:
       repository: JupiterOne/apps-helm-charts
   x-cortex-owners:
     - type: group
       name: JupiterOne/sre
-  x-cortex-service-groups:
-    - core-infra
-  x-cortex-tag: platform
-  x-cortex-oncall:
-    pagerduty:
-      id: PO09I5U
-      type: SCHEDULE
-  x-cortex-link:
-    - name: Helm Charts Documentation
-      type: documentation
-      url: https://jupiterone.github.io/apps-helm-charts
-      description: Documentation on how to use helm charts from the private helm chart repo
+  x-cortex-service-groups: tier-4
+  x-cortex-tag: apps-helm-charts
