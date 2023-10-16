@@ -4,7 +4,7 @@
   "description": "Automatically generated package.json, please edit manually",
   "repository": {
     "type": "git",
-    "url": "https://github.com/apps-helm-charts"
+    "url": "https://github.com/JupiterOne/apps-helm-charts"
   },
   "license": "UNLICENSED"
 }
