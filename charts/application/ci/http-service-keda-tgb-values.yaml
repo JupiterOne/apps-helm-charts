@@ -1,36 +1,36 @@
-# Rendered from JupiterOne/query-engine live-parity fixtures (2026-09-16). Exercises the
+# Rendered from JupiterOne/sample-app live-parity fixtures (2026-09-16). Exercises the
 # env fan-out, downward API, ExternalSecret keys and the opt-out of chart labels.
 applicationName: api
 labels:
   chartLabels: false
 commonLabels:
-  ManagedEnvironment: jupiterone-prod-us
-  ManagedProject: query-engine
+  ManagedEnvironment: sample-env
+  ManagedProject: sample-app
   ManagedService: api
   app: api
-  environment: jupiterone-prod-us
+  environment: sample-env
   platform: aws_eks
   service.name: api
-  tags.environment: jupiterone-prod-us
+  tags.environment: sample-env
   tags.platform: aws_eks
-  tags.project: query-engine
+  tags.project: sample-app
   tags.service.name: api
 commonAnnotations:
-  owner: '@jupiterone/data-platform'
-  tags.CodeOwner: '@jupiterone/data-platform'
+  owner: '@example/platform'
+  tags.CodeOwner: '@example/platform'
 rbac:
   enabled: true
   serviceAccount:
     enabled: false
-    name: query-engine-103-api
+    name: sample-ns-api
   roles:
   - name: pod-annotations
     roleName: api-pod-annotations
     bindingName: api-pod-annotations
     roleLabels: {}
     bindingLabels:
-      service.namespace: query-engine-103
-      tags.service.namespace: query-engine-103
+      service.namespace: sample-ns
+      tags.service.namespace: sample-ns
     rules:
     - apiGroups:
       - ''
@@ -64,8 +64,8 @@ deployment:
   additionalPodAnnotations:
     reloader.stakater.com/auto: 'true'
   podLabels: &id001
-    service.namespace: query-engine-103
-    tags.service.namespace: query-engine-103
+    service.namespace: sample-ns
+    tags.service.namespace: sample-ns
   additionalLabels: *id001
   priorityClassName: high-priority
   terminationGracePeriodSeconds: 60
@@ -90,7 +90,7 @@ deployment:
         topologyKey: kubernetes.io/hostname
   containerName: api
   image:
-    ref: 081157560428.dkr.ecr.us-east-2.amazonaws.com/query-engine/api:1.0.100
+    ref: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/api:1.2.3
     pullPolicy: null
   resources:
     limits:
@@ -121,44 +121,44 @@ deployment:
     name: api
     immutable: false
     keys:
-      AWS_REGION: us-east-2
+      AWS_REGION: us-east-1
       AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'
-      CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-case-status-refresh-dead-letter-queue-103
-      CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-case-status-refresh-queue-103
+      CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-dead-letter-queue-103
+      CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-queue-103
       COLLECTOR_TAG: latest
-      ENVIRONMENT: jupiterone-prod-us
-      EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-2:612791702201:stream/query-engine-events-stream-103
+      ENVIRONMENT: sample-env
+      EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/sample-app-events-stream-103
       HTTP_MODE: 'true'
-      INTERNAL_API_BASE_URL: https://api.internal.us.jupiterone.io
-      J1DS_ROLE_ARN: arn:aws:iam::612791702201:role/jupiterone-data-streaming
-      JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-jira-inbound-dead-letter-queue-103
-      JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-jira-inbound-queue-103
+      INTERNAL_API_BASE_URL: https://api.example.internal
+      J1DS_ROLE_ARN: arn:aws:iam::123456789012:role/example-data-streaming
+      JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-dead-letter-queue-103
+      JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-queue-103
       LOG_LEVEL: error
       METRICS_ENABLED: 'true'
       METRICS_EXPORTER: otlp-grpc
       NEO4J_AUTHENTICATION_ENABLED: 'true'
-      NEO4J_READER_HOSTNAME: query-engine-pod-103.internal.us.jupiterone.io
+      NEO4J_READER_HOSTNAME: sample-pod.example.internal
       NEO4J_SSL_ENABLED: 'true'
       NEO4J_USERNAME: neo4j
-      NEO4J_WRITER_HOSTNAME: query-engine-pod-103.internal.us.jupiterone.io
+      NEO4J_WRITER_HOSTNAME: sample-pod.example.internal
       NODE_OPTIONS: --max-old-space-size=6144
-      OTEL_COLLECTOR_FQDN: opentelemetry-collector-prod-us.opentelemetry-collector.svc.cluster.local
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector-prod-us.opentelemetry-collector.svc.cluster.local:4318
+      OTEL_COLLECTOR_FQDN: otel-collector.opentelemetry-collector.svc.cluster.local
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.opentelemetry-collector.svc.cluster.local:4318
       OTEL_EXPORTER_OTLP_INSECURE: 'true'
       OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
-      OTEL_RESOURCE_ATTRIBUTES: service.name=api,environment=jupiterone-prod-us,platform=aws_eks,build.id=1.0.100,project=query-engine,owner=@jupiterone/data-platform,
-      PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-2:612791702201:stream/query-domain-pipeline-outgoing-stream
+      OTEL_RESOURCE_ATTRIBUTES: service.name=api,environment=sample-env,platform=aws_eks,build.id=1.0.100,project=sample-app,owner=@example/platform,
+      PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/query-domain-pipeline-outgoing-stream
       PLATFORM: aws_eks
       POD_ID: '103'
-      POD_NAME: query-engine-pod-103
-      QUERY_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-query-queue-103
-      REGION: us-east-2
-      REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-remediation-rebuild-dead-letter-queue-103
-      REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-remediation-rebuild-queue-103
+      POD_NAME: sample-pod
+      QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-query-queue-103
+      REGION: us-east-1
+      REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-dead-letter-queue-103
+      REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-queue-103
       SERVICE_NAME: api
       SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG: 'true'
-      SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-sync-job-dead-letter-queue-103
-      SYNC_JOB_QUEUE_URL: https://sqs.us-east-2.amazonaws.com/612791702201/query-engine-sync-job-queue-103
+      SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-dead-letter-queue-103
+      SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-queue-103
       TRACING_ENABLED: 'false'
     additionalLabels: *id001
   envSecretKeys:
@@ -200,7 +200,7 @@ externalSecret:
   data:
   - secretKey: NEO4J_PASSWORD
     remoteRef:
-      key: query-engine/jupiterone-prod-us/NEO4J_PASSWORD_POD_103
+      key: sample-app/sample-env/NEO4J_PASSWORD_POD_103
       conversionStrategy: Default
       decodingStrategy: None
       metadataPolicy: None
@@ -222,18 +222,18 @@ keda:
       namespace: AWS/ApplicationELB
       metricName: TargetResponseTime
       dimensionName: LoadBalancer;TargetGroup
-      dimensionValue: app/provision-env-internal-apis/6eac4c1de8c28b6a;targetgroup/query-engine-pod-103-api-eks-tg/f8ba3c5957f1ed5e
+      dimensionValue: app/sample-alb/0123456789abcdef;targetgroup/sample-web-tg/0123456789abcdef
       metricStat: Average
       metricStatPeriod: '300'
       metricCollectionTime: '300'
       targetMetricValue: '5'
       minMetricValue: '0'
       activationTargetMetricValue: '0'
-      awsRegion: us-east-2
+      awsRegion: us-east-1
 targetGroupBinding:
   enabled: true
   name: api-tgb
-  targetGroupARN: arn:aws:elasticloadbalancing:us-east-2:612791702201:targetgroup/query-engine-pod-103-api-eks-tg/f8ba3c5957f1ed5e
+  targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/sample-web-tg/0123456789abcdef
   targetType: ip
   serviceRef:
     name: api
@@ -242,11 +242,11 @@ targetGroupBinding:
     ingress:
     - from:
       - securityGroup:
-          groupID: sg-05f6e53fb78011aae
+          groupID: sg-0123456789abcdef0
       ports:
       - port: 4000
         protocol: TCP
-  vpcID: vpc-009caae6205a2aebb
+  vpcID: vpc-0123456789abcdef0
 vpa:
   enabled: true
   name: api-vpa

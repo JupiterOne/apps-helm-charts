@@ -1,36 +1,36 @@
-# Rendered from JupiterOne/query-engine live-parity fixtures (2026-09-16). Exercises the
+# Rendered from JupiterOne/sample-app live-parity fixtures (2026-09-16). Exercises the
 # env fan-out, downward API, ExternalSecret keys and the opt-out of chart labels.
 applicationName: reaper
 labels:
   chartLabels: false
 commonLabels:
-  ManagedEnvironment: jupiterone-dev
-  ManagedProject: query-engine
+  ManagedEnvironment: sample-env
+  ManagedProject: sample-app
   ManagedService: reaper
   app: reaper
-  environment: jupiterone-dev
+  environment: sample-env
   platform: aws_eks
   service.name: reaper
-  tags.environment: jupiterone-dev
+  tags.environment: sample-env
   tags.platform: aws_eks
-  tags.project: query-engine
+  tags.project: sample-app
   tags.service.name: reaper
 commonAnnotations:
-  owner: '@jupiterone/data-platform'
-  tags.CodeOwner: '@jupiterone/data-platform'
+  owner: '@example/platform'
+  tags.CodeOwner: '@example/platform'
 rbac:
   enabled: true
   serviceAccount:
     enabled: false
-    name: query-engine-002-reaper
+    name: sample-ns-reaper
   roles:
   - name: pod-annotations
     roleName: reaper-pod-annotations
     bindingName: reaper-pod-annotations
     roleLabels: {}
     bindingLabels:
-      service.namespace: query-engine-002
-      tags.service.namespace: query-engine-002
+      service.namespace: sample-ns
+      tags.service.namespace: sample-ns
     rules:
     - apiGroups:
       - ''
@@ -61,8 +61,8 @@ cronJob:
       podAnnotations:
         karpenter.sh/do-not-disrupt: 'true'
       podLabels: &id001
-        service.namespace: query-engine-002
-        tags.service.namespace: query-engine-002
+        service.namespace: sample-ns
+        tags.service.namespace: sample-ns
       additionalLabels: *id001
       priorityClassName: high-priority
       terminationGracePeriodSeconds: 30
@@ -87,7 +87,7 @@ cronJob:
             topologyKey: kubernetes.io/hostname
       containerName: reaper
       image:
-        ref: 081157560428.dkr.ecr.us-east-1.amazonaws.com/query-engine/reaper:1.0.32
+        ref: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/reaper:1.2.3
         pullPolicy: null
       resources:
         limits:
@@ -111,40 +111,40 @@ cronJob:
         keys:
           AWS_REGION: us-east-1
           AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'
-          CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-case-status-refresh-dead-letter-queue-002
-          CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-case-status-refresh-queue-002
+          CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-dead-letter-queue-002
+          CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-queue-002
           COLLECTOR_TAG: latest
-          ENVIRONMENT: jupiterone-dev
-          EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:564077667165:stream/query-engine-events-stream-002
-          INTERNAL_API_BASE_URL: https://api.internal.dev.jupiterone.io
-          JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-jira-inbound-dead-letter-queue-002
-          JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-jira-inbound-queue-002
+          ENVIRONMENT: sample-env
+          EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/sample-app-events-stream-002
+          INTERNAL_API_BASE_URL: https://api.example.internal
+          JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-dead-letter-queue-002
+          JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-queue-002
           LOG_LEVEL: error
           METRICS_ENABLED: 'true'
           METRICS_EXPORTER: otlp-grpc
           NEO4J_AUTHENTICATION_ENABLED: 'true'
-          NEO4J_READER_HOSTNAME: query-engine-pod-002.internal.dev.jupiterone.io
+          NEO4J_READER_HOSTNAME: sample-pod.example.internal
           NEO4J_SSL_ENABLED: 'true'
           NEO4J_USERNAME: neo4j
-          NEO4J_WRITER_HOSTNAME: query-engine-pod-002.internal.dev.jupiterone.io
+          NEO4J_WRITER_HOSTNAME: sample-pod.example.internal
           NODE_OPTIONS: --max-old-space-size=750
-          OTEL_COLLECTOR_FQDN: opentelemetry-collector-dev.opentelemetry-collector.svc.cluster.local
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector-dev.opentelemetry-collector.svc.cluster.local:4318
+          OTEL_COLLECTOR_FQDN: otel-collector.opentelemetry-collector.svc.cluster.local
+          OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.opentelemetry-collector.svc.cluster.local:4318
           OTEL_EXPORTER_OTLP_INSECURE: 'true'
           OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
-          OTEL_RESOURCE_ATTRIBUTES: service.name=reaper,environment=jupiterone-dev,platform=aws_eks,build.id=1.0.32,project=query-engine,owner=@jupiterone/data-platform,
-          PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:564077667165:stream/query-domain-pipeline-outgoing-stream
+          OTEL_RESOURCE_ATTRIBUTES: service.name=reaper,environment=sample-env,platform=aws_eks,build.id=1.0.32,project=sample-app,owner=@example/platform,
+          PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/query-domain-pipeline-outgoing-stream
           PLATFORM: aws_eks
           POD_ID: '002'
-          POD_NAME: query-engine-pod-002
-          QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-query-queue-002
+          POD_NAME: sample-pod
+          QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-query-queue-002
           REGION: us-east-1
-          REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-remediation-rebuild-dead-letter-queue-002
-          REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-remediation-rebuild-queue-002
+          REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-dead-letter-queue-002
+          REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-queue-002
           SERVICE_NAME: reaper
           SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG: 'false'
-          SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-sync-job-dead-letter-queue-002
-          SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-sync-job-queue-002
+          SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-dead-letter-queue-002
+          SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-queue-002
           TRACING_ENABLED: 'false'
         additionalLabels: *id001
       envSecretKeys:
@@ -168,7 +168,7 @@ externalSecret:
   data:
   - secretKey: NEO4J_PASSWORD
     remoteRef:
-      key: query-engine/jupiterone-dev/NEO4J_PASSWORD_POD_002
+      key: sample-app/sample-env/NEO4J_PASSWORD_POD_002
       conversionStrategy: Default
       decodingStrategy: None
       metadataPolicy: None
