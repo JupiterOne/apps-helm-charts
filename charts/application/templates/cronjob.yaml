@@ -36,6 +36,17 @@ spec:
   failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit }}
 {{- end }}
   jobTemplate:
+    {{- if or $job.jobLabels $job.jobAnnotations }}
+    metadata:
+      {{- with $job.jobLabels }}
+      labels:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with $job.jobAnnotations }}
+      annotations:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+    {{- end }}
     spec:
       {{- if not (kindIs "invalid" $job.backoffLimit) }}
       backoffLimit: {{ $job.backoffLimit }}

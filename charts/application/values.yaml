@@ -42,6 +42,8 @@ cronJob:
     #   containerName: ""            # defaults to the job name
     #   podLabels: {}
     #   podAnnotations: {}
+    #   jobLabels: {}                  # jobTemplate.metadata.labels
+    #   jobAnnotations: {}             # jobTemplate.metadata.annotations
     #   priorityClassName: ""
     #   terminationGracePeriodSeconds: 30
     #   automountServiceAccountToken: true
