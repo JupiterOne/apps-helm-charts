@@ -2,14 +2,14 @@
 key map feeds the container's configMapKeyRef entries (see application.env). */ -}}
 {{- $fanouts := list }}
 {{- if and .Values.deployment .Values.deployment.enabled .Values.deployment.envFromConfigMap }}
-{{- if ne .Values.deployment.envFromConfigMap.enabled false }}
+{{- if or (not (hasKey .Values.deployment.envFromConfigMap "enabled")) .Values.deployment.envFromConfigMap.enabled }}
 {{- $fanouts = append $fanouts (dict "name" (.Values.deployment.envFromConfigMap.name | default (include "application.name" .)) "spec" .Values.deployment.envFromConfigMap) }}
 {{- end }}
 {{- end }}
 {{- if .Values.cronJob.enabled }}
 {{- range $jobName, $job := .Values.cronJob.jobs }}
 {{- if $job.envFromConfigMap }}
-{{- if ne $job.envFromConfigMap.enabled false }}
+{{- if or (not (hasKey $job.envFromConfigMap "enabled")) $job.envFromConfigMap.enabled }}
 {{- $fanouts = append $fanouts (dict "name" ($job.envFromConfigMap.name | default $jobName) "spec" $job.envFromConfigMap) }}
 {{- end }}
 {{- end }}

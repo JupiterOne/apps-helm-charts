@@ -51,7 +51,7 @@ Usage:
 {{ include "application.labels.chart" . }}
 */}}
 {{- define "application.labels.chart" -}}
-{{- if ne .Values.labels.chartLabels false -}}
+{{- if or (not (hasKey .Values.labels "chartLabels")) .Values.labels.chartLabels -}}
 group: {{ .Values.labels.group }}
 team: {{ .Values.labels.team }}
 chart: "{{ .Chart.Name }}"
@@ -160,7 +160,7 @@ Usage:
       fieldPath: {{ .fieldPath }}
 {{- end }}
 {{- with $w.envFromConfigMap }}
-{{- if ne .enabled false }}
+{{- if or (not (hasKey . "enabled")) .enabled }}
 {{- $cmName := .name | default $name }}
 {{- range $k, $v := .keys }}
 - name: {{ $k }}
