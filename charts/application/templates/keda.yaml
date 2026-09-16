@@ -3,7 +3,7 @@
 {{- $name := .Values.keda.name | default (printf "%s-scaler" (include "application.name" .)) }}
 {{- $auth := .Values.keda.triggerAuthentication | default dict }}
 {{- $authName := $auth.name | default (printf "%s-aws-credentials" (include "application.name" .)) }}
-{{- if ne $auth.enabled false }}
+{{- if or (not (hasKey $auth "enabled")) $auth.enabled }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
@@ -65,7 +65,7 @@ spec:
   triggers:
   {{- range .Values.keda.triggers }}
     - type: {{ .type }}
-      {{- if ne $auth.enabled false }}
+      {{- if or (not (hasKey $auth "enabled")) $auth.enabled }}
       authenticationRef:
         name: {{ .authenticationRef | default $authName }}
       {{- end }}
