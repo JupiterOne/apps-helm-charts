@@ -14,21 +14,53 @@ namespaceOverride: ""
 labels:
   group: io.jupiterone.platform
   team: sre
-  
-cronJob: 
+  # Set false to stop stamping group/team/chart/release/heritage on every object,
+  # for workloads whose live objects must carry exactly the labels you declare.
+  chartLabels: true
+
+# Labels added to every object's metadata AND every pod template.
+commonLabels: {}
+
+# Annotations added to Deployment/CronJob metadata AND their pod templates.
+commonAnnotations: {}
+
+cronJob:
   enabled: false
   jobs: {}
     # db-migration:
     #   schedule: "* * * 8 *"
-    #   env: 
+    #   timeZone: ""
+    #   suspend: false
+    #   concurrencyPolicy: Forbid
+    #   startingDeadlineSeconds: 200
+    #   successfulJobsHistoryLimit: 1
+    #   failedJobsHistoryLimit: 3
+    #   backoffLimit: 0
+    #   activeDeadlineSeconds: 3600
+    #   ttlSecondsAfterFinished: 600
+    #   restartPolicy: OnFailure
+    #   containerName: ""            # defaults to the job name
+    #   podLabels: {}
+    #   podAnnotations: {}
+    #   priorityClassName: ""
+    #   terminationGracePeriodSeconds: 30
+    #   automountServiceAccountToken: true
+    #   nodeSelector: {}
+    #   tolerations: []
+    #   affinity: {}
+    #   env:
     #     KEY:
     #       value: VALUE
-    #   image: 
+    #   envDownwardApi: []             # see deployment.envDownwardApi
+    #   envFromConfigMap: {}           # see deployment.envFromConfigMap
+    #   envSecretKeys: []              # see deployment.envSecretKeys
+    #   image:
     #     repository: docker.io/nginx
     #     tag: v1.0.0
+    #     ref: ""                      # whole reference; wins over repository:tag
     #   command: ["/bin/bash"]
     #   args: ["-c","sleep 5000"]
-    #   resources:  
+    #   resources:
     #     requests:
     #         memory: 5Gi
     #         cpu: 1
@@ -38,6 +70,12 @@ cronJob:
 ##########################################################
 deployment:
   enabled: true
+  # Name of the primary container; defaults to applicationName.
+  containerName: ""
+  # Deployment spec fields, rendered only when set.
+  revisionHistoryLimit: null
+  minReadySeconds: null
+  progressDeadlineSeconds: null
   # By default deploymentStrategy is set to rollingUpdate with maxSurge of 25% and maxUnavailable of 25%
   # You can change type to `Recreate` or can uncomment `rollingUpdate` specification and adjust them to your usage.
   strategy:
@@ -72,8 +110,15 @@ deployment:
     # key: value
   
   # Additional label added on pod which is used in Service's Label Selector
+  # (unless service.selectorFromPodLabels is false)
   podLabels: {}
     # env: prod
+
+  # Pod scheduling and lifecycle
+  priorityClassName: ""
+  terminationGracePeriodSeconds: null
+  automountServiceAccountToken: null
+  topologySpreadConstraints: []
 
   # Annotations on deployments
   annotations: {}
@@ -115,6 +160,30 @@ deployment:
 #          configMapKeyRef:
 #             name: config
 #             key: frequency
+
+  # Env entries rendered BEFORE `env`, in list order, from the downward API
+  envDownwardApi: []
+#  - name: KUBERNETES_POD_NAME
+#    fieldPath: metadata.name
+
+  # One ConfigMap rendered from `keys` plus one configMapKeyRef env entry per key.
+  # Declare each variable once; the chart emits both the ConfigMap and the reference.
+  envFromConfigMap: {}
+#    name: ""            # defaults to applicationName
+#    immutable: false
+#    optional: false
+#    additionalLabels: {}
+#    annotations: {}
+#    keys:
+#      LOG_LEVEL: info
+
+  # Env entries rendered AFTER `env`, each a secretKeyRef. A string entry uses the
+  # same name for the variable and the secret key; the Secret defaults to
+  # externalSecret.name, then applicationName.
+  envSecretKeys: []
+#  - name: DB_PASSWORD
+#    key: password
+#    secretName: my-secret
   
   # Volumes to be added to the pod
   volumes: {}
@@ -138,7 +207,7 @@ deployment:
     #    mountPath: path-2
 
   # Taint tolerations for nodes
-  tolerations: {}
+  tolerations: []
     # - key: "dedicated"
     #   operator: "Equal"
     #   value: "app"
@@ -160,6 +229,9 @@ deployment:
     repository: repository/image-name
     tag: v1.0.0
     pullPolicy: IfNotPresent
+    # A complete image reference (repository:tag or repository@digest). Wins over
+    # repository/tag, for tooling that writes back whole references.
+    ref: ""
   dnsConfig: {}
     # options:
     # - name: ndots
@@ -198,14 +270,20 @@ deployment:
       port: 8080
     exec: {}
       
-  # Resources to be defined for pod
-  resources: 
+  # Resources for the primary container, rendered verbatim (any resource name)
+  resources:
     limits:
       memory: 256Mi
       cpu: 0.5
     requests:
       memory: 128Mi
       cpu: 0.1
+
+  # Container lifecycle hooks (postStart / preStop)
+  lifecycle: {}
+
+  # Security Context for the primary container
+  containerSecurityContext: {}
 
   # Add additional containers besides init and app containers
   additionalContainers: {}
@@ -265,6 +343,9 @@ persistence:
 ##########################################################
 service:
   enabled: true
+  # Add deployment.podLabels to the selector (legacy behaviour). Set false for a
+  # selector of exactly the immutable `app` label.
+  selectorFromPodLabels: true
   additionalLabels:
     # expose: "true"
 
@@ -322,7 +403,9 @@ rbac:
   serviceAccount:
     enabled: true
 
-  # Create Roles (Namespaced)
+  # Create Roles (Namespaced). Optional per role: roleName / bindingName override
+  # the default <applicationName>-role-<name> / -rolebinding-<name>; roleLabels /
+  # bindingLabels add labels to that one object.
   roles:
   - name: configmaps
     rules:
@@ -510,8 +593,10 @@ networkPolicy:
 ##########################################################
 pdb:
   enabled: false
+  # Set one of the two (set the other to null).
   minAvailable: 1
-# maxUnavailable: 1
+  maxUnavailable: null
+  additionalLabels: {}
 
 ##########################################################
 # Service Monitor to collect Prometheus metrics
@@ -627,3 +712,84 @@ securityGroupPolicy:
   podSelectorRole: ""
   securityGroupIds: []
 
+
+##########################################################
+# Vertical Pod Autoscaler (autoscaling.k8s.io/v1)
+##########################################################
+vpa:
+  enabled: false
+  # name: ""                    # defaults to <applicationName>-vpa
+  # targetRef: {apiVersion: apps/v1, kind: Deployment, name: <applicationName>}
+  updateMode: "Off"
+  containerName: "*"
+  minAllowed: {}
+  maxAllowed: {}
+  # Full containerPolicies list; replaces containerName/minAllowed/maxAllowed when set
+  containerPolicies: []
+  additionalLabels: {}
+
+##########################################################
+# KEDA ScaledObject + TriggerAuthentication (keda.sh/v1alpha1)
+##########################################################
+keda:
+  enabled: false
+  # name: ""                    # defaults to <applicationName>-scaler
+  # scaleTargetRef: {name: <applicationName>}
+  minReplicaCount: null
+  maxReplicaCount: null
+  pollingInterval: null
+  cooldownPeriod: null
+  advanced: {}
+  triggerAuthentication:
+    enabled: true
+    # name: ""                  # defaults to <applicationName>-aws-credentials
+    podIdentityProvider: aws
+    # spec: {}                  # full TriggerAuthentication spec, replaces podIdentity
+  # Rendered verbatim; metadata values may use templates. authenticationRef defaults
+  # to the TriggerAuthentication above.
+  triggers: []
+  #  - type: aws-sqs-queue
+  #    metadata:
+  #      queueURL: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+  #      queueLength: "100"
+  #      awsRegion: us-east-1
+  additionalLabels: {}
+  annotations: {}
+
+##########################################################
+# ExternalSecret (external-secrets.io/v1beta1)
+##########################################################
+externalSecret:
+  enabled: false
+  # name: ""                    # defaults to applicationName; also the target Secret name
+  refreshInterval: 1h
+  secretStoreRef:
+    name: ""
+    kind: ClusterSecretStore
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data: []
+  #  - secretKey: DB_PASSWORD
+  #    remoteRef:
+  #      key: my-project/{{ .Values.applicationName }}/DB_PASSWORD
+  dataFrom: []
+  additionalLabels: {}
+  annotations: {}
+
+##########################################################
+# AWS Load Balancer Controller TargetGroupBinding (elbv2.k8s.aws/v1beta1)
+##########################################################
+targetGroupBinding:
+  enabled: false
+  # name: ""                    # defaults to <applicationName>-tgb
+  # One of:
+  targetGroupARN: ""
+  targetGroupName: ""
+  targetType: ip
+  serviceRef:
+    # name: ""                  # defaults to applicationName
+    port: null
+  networking: {}
+  vpcID: ""
+  additionalLabels: {}

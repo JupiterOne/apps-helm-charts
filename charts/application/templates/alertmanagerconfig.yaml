@@ -6,8 +6,7 @@ metadata:
   name: {{ template "application.name" . }}
   namespace: {{ template "application.namespace" . }}
   labels:
-{{ include "application.labels.team" . | indent 4 }}
-{{ include "application.labels.chart" . | indent 4 }}
+{{ include "application.labels.metadata" . | indent 4 }}
 {{ toYaml .Values.alertmanagerConfig.selectionLabels | indent 4 }}
 spec:
 {{- if .Values.alertmanagerConfig.spec.route }}

@@ -4,14 +4,18 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   labels:
-{{ include "application.labels.team" . | indent 4 }}
-{{ include "application.labels.chart" . | indent 4 }}
+{{ include "application.labels.metadata" . | indent 4 }}
+{{- if .Values.pdb.additionalLabels }}
+{{ toYaml .Values.pdb.additionalLabels | indent 4 }}
+{{- end }}
   name: {{ template "application.name" . }}
+  namespace: {{ template "application.namespace" . }}
 spec:
-  {{- if .Values.pdb.minAvailable }}
-  minAvailable: {{ .Values.pdb.minAvailable }}
-  {{- else }}
-  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- with .Values.pdb.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  {{- with .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ . }}
   {{- end }}
   selector:
     matchLabels:

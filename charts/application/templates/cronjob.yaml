@@ -1,97 +1,107 @@
 {{- if .Values.cronJob.enabled }}
 {{- range $name, $job := .Values.cronJob.jobs }}
-apiVersion: batch/v1beta1
+---
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   labels:
-{{ include "application.labels.team" $ | indent 4 }}
-{{ include "application.labels.chart" $ | indent 4 }}
+{{ include "application.labels.metadata" $ | indent 4 }}
 {{- if $job.additionalLabels }}
-{{ $job.additionalLabels | indent 4 }}
+{{ toYaml $job.additionalLabels | indent 4 }}
 {{- end }}
-{{- if $job.annotations }}
+{{- if or $job.annotations $.Values.commonAnnotations }}
   annotations:
-{{ $job.annotations | indent 4 }}
+{{ toYaml (merge (dict) (default (dict) $job.annotations) (default (dict) $.Values.commonAnnotations)) | indent 4 }}
 {{- end }}
   name: {{ $name }}
   namespace: {{ template "application.namespace" $ }}
 spec:
   schedule: {{ $job.schedule | quote }}
-{{- if $job.successfulJobsHistoryLimit }}
+{{- with $job.timeZone }}
+  timeZone: {{ . | quote }}
+{{- end }}
+{{- if not (kindIs "invalid" $job.suspend) }}
+  suspend: {{ $job.suspend }}
+{{- end }}
+{{- with $job.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ . }}
+{{- end }}
+{{- if not (kindIs "invalid" $job.successfulJobsHistoryLimit) }}
   successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit }}
-{{ end }}
+{{- end }}
 {{- if $job.concurrencyPolicy }}
   concurrencyPolicy: {{ $job.concurrencyPolicy }}
-{{ end }}
-{{- if $job.failedJobsHistoryLimit }}
+{{- end }}
+{{- if not (kindIs "invalid" $job.failedJobsHistoryLimit) }}
   failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit }}
-{{ end }}
+{{- end }}
   jobTemplate:
     spec:
+      {{- if not (kindIs "invalid" $job.backoffLimit) }}
+      backoffLimit: {{ $job.backoffLimit }}
+      {{- end }}
+      {{- with $job.activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ . }}
+      {{- end }}
+      {{- with $job.ttlSecondsAfterFinished }}
+      ttlSecondsAfterFinished: {{ . }}
+      {{- end }}
+      {{- with $job.parallelism }}
+      parallelism: {{ . }}
+      {{- end }}
+      {{- with $job.completions }}
+      completions: {{ . }}
+      {{- end }}
       template:
         metadata:
           labels:
-          {{- include "application.labels.team" $ | nindent 12 }}
-          {{- include "application.labels.chart" $ | nindent 12 }}
-        spec:
-          {{- if $.Values.rbac.serviceAccount.name }}
-          serviceAccountName: {{ $.Values.rbac.serviceAccount.name }}
-            {{- else }}
-          serviceAccountName: {{ template "application.name" $ }}
+{{ include "application.labels.pod" (dict "root" $ "podLabels" $job.podLabels) | indent 12 }}
+          {{- with (merge (dict) (default (dict) $job.podAnnotations) (default (dict) $.Values.commonAnnotations)) }}
+          annotations:
+{{ toYaml . | indent 12 }}
           {{- end }}
+        spec:
+          serviceAccountName: {{ include "application.serviceAccountName" $ }}
+{{ include "application.podSpecCommon" (dict "root" $ "workload" $job) | indent 10 }}
           containers:
-          - image: "{{ $job.image.repository }}:{{ $job.image.tag }}"
-            {{- if $job.image.imagePullPolicy }}
-            imagePullPolicy: {{ $job.image.imagePullPolicy }}
-            {{ end }}
-            name: {{ $name }}
-            {{- with $job.env }}
-            env:
-            {{- range $key, $value := $job.env }}
-            - name: {{ include "application.tplvalues.render" ( dict "value" $key "context" $ ) }}
-{{ include "application.tplvalues.render" ( dict "value" $value "context" $ ) | indent 14 }}
+          - image: {{ include "application.image" $job.image | quote }}
+            {{- with ($job.image.imagePullPolicy | default $job.image.pullPolicy) }}
+            imagePullPolicy: {{ . }}
             {{- end }}
+            name: {{ $job.containerName | default $name }}
+            {{- $env := include "application.env" (dict "root" $ "workload" $job "name" $name) }}
+            {{- if $env }}
+            env:
+{{ $env | indent 12 }}
             {{- end }}
             {{- with $job.envFrom }}
             envFrom:
 {{ toYaml . | indent 12 }}
             {{- end }}
             {{- if $job.command }}
-            command: {{ $job.command }}
+            command: {{- include "application.tplvalues.render" (dict "value" $job.command "context" $) | nindent 12 }}
             {{- end }}
             {{- with $job.args }}
             args:
 {{ toYaml . | indent 12 }}
-              {{- end }}
+            {{- end }}
             {{- with $job.resources }}
             resources:
+{{ toYaml . | indent 14 }}
+            {{- end }}
+            {{- with $job.containerSecurityContext }}
+            securityContext:
 {{ toYaml . | indent 14 }}
             {{- end }}
             {{- with $job.volumeMounts }}
             volumeMounts:
 {{ toYaml . | indent 12 }}
             {{- end }}
-          {{- with $job.nodeSelector }}
-          nodeSelector:
+          restartPolicy: {{ $job.restartPolicy | default "OnFailure" }}
+          {{- with $job.imagePullSecrets }}
+          imagePullSecrets:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          {{- with $job.affinity }}
-          affinity:
-{{ toYaml . | indent 12 }}
-          {{- end }}
-          {{- with $job.tolerations }}
-          tolerations:
-{{ toYaml . | indent 12 }}
-          {{- end }}
-          {{- if $job.restartPolicy}}
-          restartPolicy: {{ $job.restartPolicy }}
-          {{ else }}
-          restartPolicy: OnFailure
-          {{ end }}
-          {{- with $job.imagePullSecrets}}
-          imagePullSecrets: 
-{{ toYaml . | indent 12 }}
-          {{ end }}
           {{- with $job.volumes }}
           volumes:
 {{ toYaml . | indent 12 }}

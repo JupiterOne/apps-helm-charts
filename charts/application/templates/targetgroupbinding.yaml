@@ -1,0 +1,36 @@
+{{- if .Values.targetGroupBinding }}
+{{- if .Values.targetGroupBinding.enabled }}
+{{- $tgb := .Values.targetGroupBinding }}
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  labels:
+{{ include "application.labels.metadata" . | indent 4 }}
+{{- if $tgb.additionalLabels }}
+{{ toYaml $tgb.additionalLabels | indent 4 }}
+{{- end }}
+  name: {{ $tgb.name | default (printf "%s-tgb" (include "application.name" .)) }}
+  namespace: {{ template "application.namespace" . }}
+spec:
+  {{- if $tgb.targetGroupARN }}
+  targetGroupARN: {{ $tgb.targetGroupARN }}
+  {{- else }}
+  targetGroupName: {{ required "targetGroupBinding.targetGroupARN or targetGroupName is required" $tgb.targetGroupName }}
+  {{- end }}
+  targetType: {{ $tgb.targetType | default "ip" }}
+  serviceRef:
+    name: {{ ($tgb.serviceRef | default dict).name | default (include "application.name" .) }}
+    port: {{ required "targetGroupBinding.serviceRef.port is required" ($tgb.serviceRef | default dict).port }}
+  {{- with $tgb.networking }}
+  networking:
+{{ toYaml . | indent 4 }}
+  {{- end }}
+  {{- with $tgb.vpcID }}
+  vpcID: {{ . }}
+  {{- end }}
+  {{- with $tgb.nodeSelector }}
+  nodeSelector:
+{{ toYaml . | indent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

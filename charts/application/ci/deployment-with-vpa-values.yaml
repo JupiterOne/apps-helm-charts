@@ -1,0 +1,203 @@
+# Rendered from JupiterOne/query-engine live-parity fixtures (2026-09-16). Exercises the
+# env fan-out, downward API, ExternalSecret keys and the opt-out of chart labels.
+applicationName: executor
+labels:
+  chartLabels: false
+commonLabels:
+  ManagedEnvironment: jupiterone-dev
+  ManagedProject: query-engine
+  ManagedService: executor
+  app: executor
+  environment: jupiterone-dev
+  platform: aws_eks
+  service.name: executor
+  tags.environment: jupiterone-dev
+  tags.platform: aws_eks
+  tags.project: query-engine
+  tags.service.name: executor
+commonAnnotations:
+  owner: '@jupiterone/data-platform'
+  tags.CodeOwner: '@jupiterone/data-platform'
+rbac:
+  enabled: true
+  serviceAccount:
+    enabled: false
+    name: query-engine-002-j1ql-executor
+  roles:
+  - name: pod-annotations
+    roleName: executor-pod-annotations
+    bindingName: executor-pod-annotations
+    roleLabels: {}
+    bindingLabels:
+      service.namespace: query-engine-002
+      tags.service.namespace: query-engine-002
+    rules:
+    - apiGroups:
+      - ''
+      resources:
+      - pods
+      verbs:
+      - update
+      - patch
+      - get
+service:
+  enabled: false
+pdb:
+  enabled: true
+  minAvailable: null
+  maxUnavailable: 1
+deployment:
+  enabled: true
+  replicas: 2
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  additionalPodAnnotations: {}
+  podLabels: &id001
+    service.namespace: query-engine-002
+    tags.service.namespace: query-engine-002
+  additionalLabels: *id001
+  priorityClassName: high-priority
+  terminationGracePeriodSeconds: 30
+  automountServiceAccountToken: true
+  nodeSelector:
+    Team: platform-team
+    karpenter.sh/nodepool: platform-team
+  tolerations:
+  - effect: NoSchedule
+    key: Team
+    operator: Equal
+    value: platform-team
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - executor
+        topologyKey: kubernetes.io/hostname
+  containerName: executor
+  image:
+    ref: 081157560428.dkr.ecr.us-east-1.amazonaws.com/query-engine/executor/development:local-1.0.98-90b25378ab6a740c92e708707116eace76ff8e70-1789560797298-arm64
+    pullPolicy: null
+  resources:
+    limits:
+      cpu: 1024m
+      ephemeral-storage: 30Gi
+      memory: 4Gi
+    requests:
+      cpu: 50m
+      ephemeral-storage: 8Gi
+      memory: 1Gi
+  ports: null
+  lifecycle: null
+  envDownwardApi:
+  - name: KUBERNETES_POD_NAME
+    fieldPath: metadata.name
+  - name: KUBERNETES_NAMESPACE
+    fieldPath: metadata.namespace
+  envFromConfigMap:
+    name: executor
+    immutable: false
+    keys:
+      AWS_REGION: us-east-1
+      AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'
+      CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-case-status-refresh-dead-letter-queue-002
+      CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-case-status-refresh-queue-002
+      COLLECTOR_TAG: latest
+      ENVIRONMENT: jupiterone-dev
+      EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:564077667165:stream/query-engine-events-stream-002
+      INTERNAL_API_BASE_URL: https://api.internal.dev.jupiterone.io
+      J1DS_ROLE_ARN: arn:aws:iam::564077667165:role/jupiterone-data-streaming
+      JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-jira-inbound-dead-letter-queue-002
+      JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-jira-inbound-queue-002
+      LOG_LEVEL: error
+      MAX_CONCURRENT_MESSAGES: '6'
+      METRICS_ENABLED: 'true'
+      METRICS_EXPORTER: otlp-grpc
+      NEO4J_AUTHENTICATION_ENABLED: 'true'
+      NEO4J_READER_HOSTNAME: query-engine-pod-002.internal.dev.jupiterone.io
+      NEO4J_SSL_ENABLED: 'true'
+      NEO4J_USERNAME: neo4j
+      NEO4J_WRITER_HOSTNAME: query-engine-pod-002.internal.dev.jupiterone.io
+      NODE_OPTIONS: --max-old-space-size=3072
+      OTEL_ATTRIBUTE_COUNT_LIMIT: '128'
+      OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT: '4095'
+      OTEL_COLLECTOR_FQDN: opentelemetry-collector-dev.opentelemetry-collector.svc.cluster.local
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector-dev.opentelemetry-collector.svc.cluster.local:4318
+      OTEL_EXPORTER_OTLP_INSECURE: 'true'
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
+      OTEL_RESOURCE_ATTRIBUTES: service.name=executor,environment=jupiterone-dev,platform=aws_eks,build.id=local-1.0.98-90b25378ab6a740c92e708707116eace76ff8e70-1789560797298-arm64,project=query-engine,owner=@jupiterone/data-platform,
+      PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:564077667165:stream/query-domain-pipeline-outgoing-stream
+      PLATFORM: aws_eks
+      POD_ID: '002'
+      POD_NAME: query-engine-pod-002
+      QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-query-queue-002
+      REGION: us-east-1
+      REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-remediation-rebuild-dead-letter-queue-002
+      REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-remediation-rebuild-queue-002
+      SERVICE_NAME: executor
+      SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG: 'false'
+      SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-sync-job-dead-letter-queue-002
+      SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/564077667165/query-engine-sync-job-queue-002
+      TRACING_ENABLED: 'false'
+    additionalLabels: *id001
+  envSecretKeys:
+  - name: NEO4J_PASSWORD
+    secretName: executor
+  livenessProbe:
+    enabled: true
+    failureThreshold: 5
+    httpGet:
+      path: /health/liveness
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    successThreshold: 1
+    timeoutSeconds: 15
+  readinessProbe:
+    enabled: true
+    failureThreshold: 8
+    httpGet:
+      path: /health
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 10
+externalSecret:
+  enabled: true
+  name: executor
+  refreshInterval: 1h
+  secretStoreRef:
+    name: configuration-api-webhook
+    kind: ClusterSecretStore
+  target:
+    name: executor
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+  - secretKey: NEO4J_PASSWORD
+    remoteRef:
+      key: query-engine/jupiterone-dev/NEO4J_PASSWORD_POD_002
+      conversionStrategy: Default
+      decodingStrategy: None
+      metadataPolicy: None
+vpa:
+  enabled: true
+  name: executor-vpa
+  updateMode: 'Off'
+  containerName: '*'
+  minAllowed:
+    cpu: 250m
+    memory: 1536Mi
+  maxAllowed:
+    cpu: 8
+    memory: 8Gi

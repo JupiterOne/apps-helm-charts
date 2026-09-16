@@ -1,12 +1,53 @@
-{{- if .Values.configMap }}
-{{- if .Values.configMap.enabled }}
-{{- range $nameSuffix, $data := .Values.configMap.files }}
+{{- /* Fanned-out env ConfigMaps: one per workload that sets envFromConfigMap. The same
+key map feeds the container's configMapKeyRef entries (see application.env). */ -}}
+{{- $fanouts := list }}
+{{- if and .Values.deployment .Values.deployment.enabled .Values.deployment.envFromConfigMap }}
+{{- if ne .Values.deployment.envFromConfigMap.enabled false }}
+{{- $fanouts = append $fanouts (dict "name" (.Values.deployment.envFromConfigMap.name | default (include "application.name" .)) "spec" .Values.deployment.envFromConfigMap) }}
+{{- end }}
+{{- end }}
+{{- if .Values.cronJob.enabled }}
+{{- range $jobName, $job := .Values.cronJob.jobs }}
+{{- if $job.envFromConfigMap }}
+{{- if ne $job.envFromConfigMap.enabled false }}
+{{- $fanouts = append $fanouts (dict "name" ($job.envFromConfigMap.name | default $jobName) "spec" $job.envFromConfigMap) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- range $fanouts }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-{{ include "application.labels.team" $ | indent 4 }}
-{{ include "application.labels.chart" $ | indent 4 }}
+{{ include "application.labels.metadata" $ | indent 4 }}
+{{- if .spec.additionalLabels }}
+{{ toYaml .spec.additionalLabels | indent 4 }}
+{{- end }}
+{{- if .spec.annotations }}
+  annotations:
+{{ toYaml .spec.annotations | indent 4 }}
+{{- end }}
+  name: {{ .name }}
+  namespace: {{ template "application.namespace" $ }}
+{{- if not (kindIs "invalid" .spec.immutable) }}
+immutable: {{ .spec.immutable }}
+{{- end }}
+data:
+  {{- range $k, $v := .spec.keys }}
+  {{ $k }}: {{ include "application.tplvalues.render" (dict "value" ($v | toString) "context" $) | quote }}
+  {{- end }}
+{{- end }}
+{{- if .Values.configMap }}
+{{- if .Values.configMap.enabled }}
+{{- range $nameSuffix, $data := .Values.configMap.files }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+{{ include "application.labels.metadata" $ | indent 4 }}
 {{- if $.Values.configMap.additionalLabels }}
 {{ toYaml $.Values.configMap.additionalLabels | indent 4 }}
 {{- end }}
@@ -18,7 +59,6 @@ metadata:
   namespace: {{ template "application.namespace" $ }}
 data:
 {{ include "application.tplvalues.render" ( dict "value" $data "context" $ ) | indent 2 }}
----
 {{- end }}
 {{- end }}
 {{- end }}
