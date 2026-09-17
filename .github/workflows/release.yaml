@@ -30,9 +30,11 @@ jobs:
       with:
         APP_ID: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_APP_ID }}
         APP_PEM: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_PRIVATE_KEY }}
+    # v6 handles the GnuPG 2.4 agent on current runners; v5 left git commit signing
+    # unable to reach the passphrase ("gpg failed to sign the data", run 35260306671).
     - name: Import GPG key
       id: import_gpg
-      uses: crazy-max/ghaction-import-gpg@v5
+      uses: crazy-max/ghaction-import-gpg@v6
       with:
         gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
         passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -102,9 +104,11 @@ jobs:
       run: |
         helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug
     - name: Run chart-releaser
-      uses: helm/chart-releaser-action@v1.4.0
-      with: 
+      uses: helm/chart-releaser-action@v1.6.0
+      with:
         config: cr.yaml
+        # A rerun after a partial release must not fail on the release that already exists.
+        skip_existing: true
       env:
         CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     - name: Commit and push files
