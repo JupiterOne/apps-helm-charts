@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented here
 
+### Unreleased
+- Added a helm-unittest suite under `charts/application/tests/` covering the templates
+  added in v1.1.0; `ci/*-values.yaml` fixtures moved to `charts/application/tests/fixtures/`
+  and are now also used as suite-level `values:` overrides
+- Fixed: `deployment.terminationGracePeriodSeconds` and `deployment.automountServiceAccountToken`
+  rendered as explicit `null` by default instead of being omitted, because the template
+  checked `hasKey` instead of the value itself
+
 ### v1.1.0
 - CronJob moves to `batch/v1`, renders multiple jobs correctly and gains `suspend`, `timeZone`,
   `startingDeadlineSeconds`, `backoffLimit`, `activeDeadlineSeconds`, `ttlSecondsAfterFinished`,

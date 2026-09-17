@@ -20,6 +20,16 @@ To uninstall the chart:
 
     helm delete <name-of-the-chart> -n namespace
 
+## Unit Tests
+
+Suites live under `charts/application/tests/`, one file per template area, and run with
+the [helm-unittest](https://github.com/helm-unittest/helm-unittest) plugin. Fixtures
+shared with the PR render/Pluto/kubeconform loop live under
+`charts/application/tests/fixtures/`.
+
+    helm plugin list | grep -q unittest || helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.0.3
+    helm unittest charts/application
+
 ## Testing - Configuring Env/Secrets File
 
   vi ~/.env

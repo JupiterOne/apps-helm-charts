@@ -242,10 +242,10 @@ Usage:
 {{- with $w.priorityClassName }}
 priorityClassName: {{ . }}
 {{- end }}
-{{- if hasKey $w "terminationGracePeriodSeconds" }}
+{{- if not (kindIs "invalid" $w.terminationGracePeriodSeconds) }}
 terminationGracePeriodSeconds: {{ $w.terminationGracePeriodSeconds }}
 {{- end }}
-{{- if hasKey $w "automountServiceAccountToken" }}
+{{- if not (kindIs "invalid" $w.automountServiceAccountToken) }}
 automountServiceAccountToken: {{ $w.automountServiceAccountToken }}
 {{- end }}
 {{- with $w.nodeSelector }}
