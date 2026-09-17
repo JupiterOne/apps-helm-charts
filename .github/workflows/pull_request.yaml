@@ -24,10 +24,12 @@ jobs:
       with:
         version: "v0.18.0"
     # Set Up Helm
+    # v3.17.1: the helm-unittest plugin needs a Helm newer than the 3.7.0 this workflow
+    # used to pin; lint, dry-run install and package all still pass under it.
     - name: Set up Helm
       uses: azure/setup-helm@v1
       with:
-        version: v3.7.0
+        version: v3.17.1
     # Check K8s deprecations
     - name: Setup Pluto
       uses: FairwindsOps/pluto/github-action@master
@@ -37,9 +39,17 @@ jobs:
     - name: Helm Lint
       run: |
         helm lint ${CHART_PATH}
-    # Every ci/*-values.yaml fixture must render, pass Pluto and validate against the
-    # Kubernetes + CRD schemas. The stock values.yaml disables most templates, so the
-    # fixtures are what actually exercise them.
+    # Pinned to v1.0.3: newer helm-unittest releases moved plugin.yaml to the
+    # platformHooks schema, which needs Helm 3.18.10+.
+    - name: Setup helm-unittest
+      run: |
+        helm plugin list | grep -q unittest || helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.0.3
+    - name: Run helm unittest
+      run: |
+        helm unittest ${CHART_PATH}
+    # Every tests/fixtures/*-values.yaml fixture must render, pass Pluto and validate
+    # against the Kubernetes + CRD schemas. The stock values.yaml disables most
+    # templates, so the fixtures are what actually exercise them.
     - name: Setup kubeconform
       run: |
         curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
@@ -47,7 +57,7 @@ jobs:
     - name: Render and validate fixtures
       run: |
         set -euo pipefail
-        for f in ${CHART_PATH}/ci/*-values.yaml; do
+        for f in ${CHART_PATH}/tests/fixtures/*-values.yaml; do
           echo "== $(basename "$f")"
           helm template fixture ${CHART_PATH} -n fixture -f "$f" > /tmp/rendered.yaml
           pluto detect /tmp/rendered.yaml
