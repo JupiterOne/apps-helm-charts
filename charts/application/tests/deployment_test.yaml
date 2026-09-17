@@ -1,0 +1,203 @@
+suite: deployment
+templates:
+  - deployment.yaml
+tests:
+  - it: renders a Deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - isAPIVersion:
+          of: apps/v1
+
+  - it: env order is downward API, then configMap keys, then secretKeyRef
+    set:
+      deployment.envDownwardApi:
+        - name: KUBERNETES_POD_NAME
+          fieldPath: metadata.name
+        - name: KUBERNETES_NAMESPACE
+          fieldPath: metadata.namespace
+      deployment.envFromConfigMap:
+        keys:
+          AWS_REGION: us-east-1
+          LOG_LEVEL: info
+      deployment.envSecretKeys:
+        - name: DB_PASSWORD
+          secretName: my-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: KUBERNETES_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_REGION
+                  name: application
+                  optional: false
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  key: LOG_LEVEL
+                  name: application
+                  optional: false
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: my-secret
+                  optional: false
+
+  - it: imagePullPolicy is absent when deployment.image.pullPolicy is null
+    set:
+      deployment.image.pullPolicy: ""
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].imagePullPolicy
+
+  - it: image.ref wins over repository/tag
+    set:
+      deployment.image.repository: docker.io/nginx
+      deployment.image.tag: "1.27"
+      deployment.image.ref: registry.example.com/app@sha256:aaaabbbbccccddddeeeeffff00001111222233334444555566667777888899
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/app@sha256:aaaabbbbccccddddeeeeffff00001111222233334444555566667777888899
+
+  - it: spec.replicas renders when set to 0
+    set:
+      deployment.replicas: 0
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 0
+
+  - it: scheduling and lifecycle fields are absent by default
+    asserts:
+      - notExists:
+          path: spec.revisionHistoryLimit
+      - notExists:
+          path: spec.template.spec.priorityClassName
+      - notExists:
+          path: spec.template.spec.terminationGracePeriodSeconds
+      - notExists:
+          path: spec.template.spec.automountServiceAccountToken
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: scheduling and lifecycle fields render when set
+    set:
+      deployment.revisionHistoryLimit: 5
+      deployment.priorityClassName: high-priority
+      deployment.terminationGracePeriodSeconds: 45
+      deployment.automountServiceAccountToken: true
+      deployment.lifecycle:
+        preStop:
+          exec:
+            command: ["sleep", "5"]
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 5
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high-priority
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 45
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value: ["sleep", "5"]
+
+  - it: resources renders free-form keys such as ephemeral-storage
+    set:
+      deployment.resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+          ephemeral-storage: 3Gi
+        requests:
+          cpu: "1"
+          memory: 1Gi
+          ephemeral-storage: 1Gi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.ephemeral-storage
+          value: 3Gi
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.ephemeral-storage
+          value: 1Gi
+
+  - it: probe timing fields are absent when unset
+    set:
+      deployment.readinessProbe.failureThreshold: null
+      deployment.readinessProbe.periodSeconds: null
+      deployment.readinessProbe.successThreshold: null
+      deployment.readinessProbe.timeoutSeconds: null
+      deployment.readinessProbe.initialDelaySeconds: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.failureThreshold
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.periodSeconds
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.successThreshold
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.timeoutSeconds
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet
+
+  - it: labels.chartLabels false removes chart provenance labels from metadata
+    set:
+      labels.chartLabels: false
+    asserts:
+      - notExists:
+          path: metadata.labels.chart
+      - notExists:
+          path: metadata.labels.release
+      - notExists:
+          path: metadata.labels.heritage
+      - notExists:
+          path: metadata.labels.team
+      - notExists:
+          path: metadata.labels.group
+      - equal:
+          path: metadata.labels.app
+          value: application
+
+  - it: commonLabels appear on both metadata and pod template
+    set:
+      commonLabels:
+        foo: bar
+    asserts:
+      - equal:
+          path: metadata.labels.foo
+          value: bar
+      - equal:
+          path: spec.template.metadata.labels.foo
+          value: bar
+
+  - it: selector is exactly the single app label regardless of commonLabels
+    set:
+      applicationName: myapp
+      commonLabels:
+        foo: bar
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app: myapp

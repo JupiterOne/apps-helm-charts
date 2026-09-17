@@ -1,0 +1,27 @@
+# One snapshot per ci fixture so any change to its rendered output must be reviewed.
+# The stock values.yaml disables most templates; these fixtures are what exercise them.
+suite: fixture snapshots
+tests:
+  - it: cronjob-values fixture matches snapshot
+    values:
+      - fixtures/cronjob-values.yaml
+    asserts:
+      - matchSnapshot: {}
+
+  - it: deployment-with-vpa-values fixture matches snapshot
+    values:
+      - fixtures/deployment-with-vpa-values.yaml
+    asserts:
+      - matchSnapshot: {}
+
+  - it: http-service-keda-tgb-values fixture matches snapshot
+    values:
+      - fixtures/http-service-keda-tgb-values.yaml
+    asserts:
+      - matchSnapshot: {}
+
+  - it: legacy-values fixture matches snapshot
+    values:
+      - fixtures/legacy-values.yaml
+    asserts:
+      - matchSnapshot: {}

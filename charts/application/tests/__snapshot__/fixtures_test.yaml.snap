@@ -1,0 +1,2086 @@
+cronjob-values fixture matches snapshot:
+  1: |
+    apiVersion: v1
+    data:
+      AWS_REGION: us-east-1
+      AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: "1"
+      CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-dead-letter-queue-002
+      CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-queue-002
+      COLLECTOR_TAG: latest
+      ENVIRONMENT: sample-env
+      EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/sample-app-events-stream-002
+      INTERNAL_API_BASE_URL: https://api.example.internal
+      JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-dead-letter-queue-002
+      JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-queue-002
+      LOG_LEVEL: error
+      METRICS_ENABLED: "true"
+      METRICS_EXPORTER: otlp-grpc
+      NEO4J_AUTHENTICATION_ENABLED: "true"
+      NEO4J_READER_HOSTNAME: sample-pod.example.internal
+      NEO4J_SSL_ENABLED: "true"
+      NEO4J_USERNAME: neo4j
+      NEO4J_WRITER_HOSTNAME: sample-pod.example.internal
+      NODE_OPTIONS: --max-old-space-size=750
+      OTEL_COLLECTOR_FQDN: otel-collector.opentelemetry-collector.svc.cluster.local
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.opentelemetry-collector.svc.cluster.local:4318
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
+      OTEL_RESOURCE_ATTRIBUTES: service.name=reaper,environment=sample-env,platform=aws_eks,build.id=1.0.32,project=sample-app,owner=@example/platform,
+      PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/query-domain-pipeline-outgoing-stream
+      PLATFORM: aws_eks
+      POD_ID: "002"
+      POD_NAME: sample-pod
+      QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-query-queue-002
+      REGION: us-east-1
+      REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-dead-letter-queue-002
+      REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-queue-002
+      SERVICE_NAME: reaper
+      SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG: "false"
+      SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-dead-letter-queue-002
+      SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-queue-002
+      TRACING_ENABLED: "false"
+    immutable: false
+    kind: ConfigMap
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: reaper
+        app: reaper
+        environment: sample-env
+        platform: aws_eks
+        service.name: reaper
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: reaper
+        tags.service.namespace: sample-ns
+      name: reaper
+      namespace: NAMESPACE
+  2: |
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      annotations:
+        owner: '@example/platform'
+        tags.CodeOwner: '@example/platform'
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: reaper
+        app: reaper
+        environment: sample-env
+        platform: aws_eks
+        service.name: reaper
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: reaper
+        tags.service.namespace: sample-ns
+      name: reaper
+      namespace: NAMESPACE
+    spec:
+      concurrencyPolicy: Forbid
+      failedJobsHistoryLimit: 3
+      jobTemplate:
+        spec:
+          backoffLimit: 0
+          template:
+            metadata:
+              annotations:
+                karpenter.sh/do-not-disrupt: "true"
+                owner: '@example/platform'
+                tags.CodeOwner: '@example/platform'
+              labels:
+                ManagedEnvironment: sample-env
+                ManagedProject: sample-app
+                ManagedService: reaper
+                app: reaper
+                environment: sample-env
+                platform: aws_eks
+                service.name: reaper
+                service.namespace: sample-ns
+                tags.environment: sample-env
+                tags.platform: aws_eks
+                tags.project: sample-app
+                tags.service.name: reaper
+                tags.service.namespace: sample-ns
+            spec:
+              affinity:
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchExpressions:
+                          - key: app
+                            operator: In
+                            values:
+                              - reaper
+                      topologyKey: kubernetes.io/hostname
+              automountServiceAccountToken: true
+              containers:
+                - env:
+                    - name: KUBERNETES_POD_NAME
+                      valueFrom:
+                        fieldRef:
+                          apiVersion: v1
+                          fieldPath: metadata.name
+                    - name: KUBERNETES_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          apiVersion: v1
+                          fieldPath: metadata.namespace
+                    - name: AWS_REGION
+                      valueFrom:
+                        configMapKeyRef:
+                          key: AWS_REGION
+                          name: reaper
+                          optional: false
+                    - name: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
+                      valueFrom:
+                        configMapKeyRef:
+                          key: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
+                          name: reaper
+                          optional: false
+                    - name: CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: CASE_STATUS_REFRESH_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: CASE_STATUS_REFRESH_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: COLLECTOR_TAG
+                      valueFrom:
+                        configMapKeyRef:
+                          key: COLLECTOR_TAG
+                          name: reaper
+                          optional: false
+                    - name: ENVIRONMENT
+                      valueFrom:
+                        configMapKeyRef:
+                          key: ENVIRONMENT
+                          name: reaper
+                          optional: false
+                    - name: EVENTS_STREAM_ARN
+                      valueFrom:
+                        configMapKeyRef:
+                          key: EVENTS_STREAM_ARN
+                          name: reaper
+                          optional: false
+                    - name: INTERNAL_API_BASE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: INTERNAL_API_BASE_URL
+                          name: reaper
+                          optional: false
+                    - name: JIRA_INBOUND_DEAD_LETTER_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: JIRA_INBOUND_DEAD_LETTER_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: JIRA_INBOUND_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: JIRA_INBOUND_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: LOG_LEVEL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: LOG_LEVEL
+                          name: reaper
+                          optional: false
+                    - name: METRICS_ENABLED
+                      valueFrom:
+                        configMapKeyRef:
+                          key: METRICS_ENABLED
+                          name: reaper
+                          optional: false
+                    - name: METRICS_EXPORTER
+                      valueFrom:
+                        configMapKeyRef:
+                          key: METRICS_EXPORTER
+                          name: reaper
+                          optional: false
+                    - name: NEO4J_AUTHENTICATION_ENABLED
+                      valueFrom:
+                        configMapKeyRef:
+                          key: NEO4J_AUTHENTICATION_ENABLED
+                          name: reaper
+                          optional: false
+                    - name: NEO4J_READER_HOSTNAME
+                      valueFrom:
+                        configMapKeyRef:
+                          key: NEO4J_READER_HOSTNAME
+                          name: reaper
+                          optional: false
+                    - name: NEO4J_SSL_ENABLED
+                      valueFrom:
+                        configMapKeyRef:
+                          key: NEO4J_SSL_ENABLED
+                          name: reaper
+                          optional: false
+                    - name: NEO4J_USERNAME
+                      valueFrom:
+                        configMapKeyRef:
+                          key: NEO4J_USERNAME
+                          name: reaper
+                          optional: false
+                    - name: NEO4J_WRITER_HOSTNAME
+                      valueFrom:
+                        configMapKeyRef:
+                          key: NEO4J_WRITER_HOSTNAME
+                          name: reaper
+                          optional: false
+                    - name: NODE_OPTIONS
+                      valueFrom:
+                        configMapKeyRef:
+                          key: NODE_OPTIONS
+                          name: reaper
+                          optional: false
+                    - name: OTEL_COLLECTOR_FQDN
+                      valueFrom:
+                        configMapKeyRef:
+                          key: OTEL_COLLECTOR_FQDN
+                          name: reaper
+                          optional: false
+                    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                      valueFrom:
+                        configMapKeyRef:
+                          key: OTEL_EXPORTER_OTLP_ENDPOINT
+                          name: reaper
+                          optional: false
+                    - name: OTEL_EXPORTER_OTLP_INSECURE
+                      valueFrom:
+                        configMapKeyRef:
+                          key: OTEL_EXPORTER_OTLP_INSECURE
+                          name: reaper
+                          optional: false
+                    - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+                      valueFrom:
+                        configMapKeyRef:
+                          key: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+                          name: reaper
+                          optional: false
+                    - name: OTEL_RESOURCE_ATTRIBUTES
+                      valueFrom:
+                        configMapKeyRef:
+                          key: OTEL_RESOURCE_ATTRIBUTES
+                          name: reaper
+                          optional: false
+                    - name: PIPELINE_OUTGOING_STREAM_ARN
+                      valueFrom:
+                        configMapKeyRef:
+                          key: PIPELINE_OUTGOING_STREAM_ARN
+                          name: reaper
+                          optional: false
+                    - name: PLATFORM
+                      valueFrom:
+                        configMapKeyRef:
+                          key: PLATFORM
+                          name: reaper
+                          optional: false
+                    - name: POD_ID
+                      valueFrom:
+                        configMapKeyRef:
+                          key: POD_ID
+                          name: reaper
+                          optional: false
+                    - name: POD_NAME
+                      valueFrom:
+                        configMapKeyRef:
+                          key: POD_NAME
+                          name: reaper
+                          optional: false
+                    - name: QUERY_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: QUERY_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: REGION
+                      valueFrom:
+                        configMapKeyRef:
+                          key: REGION
+                          name: reaper
+                          optional: false
+                    - name: REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: REMEDIATION_REBUILD_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: REMEDIATION_REBUILD_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: SERVICE_NAME
+                      valueFrom:
+                        configMapKeyRef:
+                          key: SERVICE_NAME
+                          name: reaper
+                          optional: false
+                    - name: SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG
+                      valueFrom:
+                        configMapKeyRef:
+                          key: SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG
+                          name: reaper
+                          optional: false
+                    - name: SYNC_JOB_DEAD_LETTER_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: SYNC_JOB_DEAD_LETTER_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: SYNC_JOB_QUEUE_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          key: SYNC_JOB_QUEUE_URL
+                          name: reaper
+                          optional: false
+                    - name: TRACING_ENABLED
+                      valueFrom:
+                        configMapKeyRef:
+                          key: TRACING_ENABLED
+                          name: reaper
+                          optional: false
+                    - name: NEO4J_PASSWORD
+                      valueFrom:
+                        secretKeyRef:
+                          key: NEO4J_PASSWORD
+                          name: reaper
+                          optional: false
+                  image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/reaper:1.2.3
+                  name: reaper
+                  resources:
+                    limits:
+                      cpu: 1024m
+                      ephemeral-storage: 3Gi
+                      memory: 1000Mi
+                    requests:
+                      cpu: 1024m
+                      ephemeral-storage: 1Gi
+                      memory: 1000Mi
+              nodeSelector:
+                Team: platform-team
+                karpenter.sh/nodepool: platform-team
+              priorityClassName: high-priority
+              restartPolicy: Never
+              serviceAccountName: sample-ns-reaper
+              terminationGracePeriodSeconds: 30
+              tolerations:
+                - effect: NoSchedule
+                  key: Team
+                  operator: Equal
+                  value: platform-team
+      schedule: '*/5 * * * *'
+      successfulJobsHistoryLimit: 1
+      suspend: false
+  3: |
+    apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: reaper
+        app: reaper
+        environment: sample-env
+        platform: aws_eks
+        service.name: reaper
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: reaper
+      name: reaper
+      namespace: NAMESPACE
+    spec:
+      data:
+        - remoteRef:
+            conversionStrategy: Default
+            decodingStrategy: None
+            key: sample-app/sample-env/NEO4J_PASSWORD_POD_002
+            metadataPolicy: None
+          secretKey: NEO4J_PASSWORD
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: configuration-api-webhook
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: reaper
+  4: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: reaper
+        app: reaper
+        environment: sample-env
+        platform: aws_eks
+        service.name: reaper
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: reaper
+      name: reaper-pod-annotations
+      namespace: NAMESPACE
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - pods
+        verbs:
+          - update
+          - patch
+          - get
+  5: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: reaper
+        app: reaper
+        environment: sample-env
+        platform: aws_eks
+        service.name: reaper
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: reaper
+        tags.service.namespace: sample-ns
+      name: reaper-pod-annotations
+      namespace: NAMESPACE
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: reaper-pod-annotations
+    subjects:
+      - kind: ServiceAccount
+        name: sample-ns-reaper
+        namespace: NAMESPACE
+deployment-with-vpa-values fixture matches snapshot:
+  1: |
+    apiVersion: v1
+    data:
+      AWS_REGION: us-east-1
+      AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: "1"
+      CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-dead-letter-queue-002
+      CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-queue-002
+      COLLECTOR_TAG: latest
+      ENVIRONMENT: sample-env
+      EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/sample-app-events-stream-002
+      INTERNAL_API_BASE_URL: https://api.example.internal
+      J1DS_ROLE_ARN: arn:aws:iam::123456789012:role/example-data-streaming
+      JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-dead-letter-queue-002
+      JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-queue-002
+      LOG_LEVEL: error
+      MAX_CONCURRENT_MESSAGES: "6"
+      METRICS_ENABLED: "true"
+      METRICS_EXPORTER: otlp-grpc
+      NEO4J_AUTHENTICATION_ENABLED: "true"
+      NEO4J_READER_HOSTNAME: sample-pod.example.internal
+      NEO4J_SSL_ENABLED: "true"
+      NEO4J_USERNAME: neo4j
+      NEO4J_WRITER_HOSTNAME: sample-pod.example.internal
+      NODE_OPTIONS: --max-old-space-size=3072
+      OTEL_ATTRIBUTE_COUNT_LIMIT: "128"
+      OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT: "4095"
+      OTEL_COLLECTOR_FQDN: otel-collector.opentelemetry-collector.svc.cluster.local
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.opentelemetry-collector.svc.cluster.local:4318
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
+      OTEL_RESOURCE_ATTRIBUTES: service.name=executor,environment=sample-env,platform=aws_eks,build.id=1.2.3,project=sample-app,owner=@example/platform,
+      PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/query-domain-pipeline-outgoing-stream
+      PLATFORM: aws_eks
+      POD_ID: "002"
+      POD_NAME: sample-pod
+      QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-query-queue-002
+      REGION: us-east-1
+      REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-dead-letter-queue-002
+      REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-queue-002
+      SERVICE_NAME: executor
+      SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG: "false"
+      SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-dead-letter-queue-002
+      SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-queue-002
+      TRACING_ENABLED: "false"
+    immutable: false
+    kind: ConfigMap
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: executor
+        app: executor
+        environment: sample-env
+        platform: aws_eks
+        service.name: executor
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: executor
+        tags.service.namespace: sample-ns
+      name: executor
+      namespace: NAMESPACE
+  2: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        owner: '@example/platform'
+        tags.CodeOwner: '@example/platform'
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: executor
+        app: executor
+        environment: sample-env
+        platform: aws_eks
+        service.name: executor
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: executor
+        tags.service.namespace: sample-ns
+      name: executor
+      namespace: NAMESPACE
+    spec:
+      replicas: 2
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: executor
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            owner: '@example/platform'
+            tags.CodeOwner: '@example/platform'
+          labels:
+            ManagedEnvironment: sample-env
+            ManagedProject: sample-app
+            ManagedService: executor
+            app: executor
+            environment: sample-env
+            platform: aws_eks
+            service.name: executor
+            service.namespace: sample-ns
+            tags.environment: sample-env
+            tags.platform: aws_eks
+            tags.project: sample-app
+            tags.service.name: executor
+            tags.service.namespace: sample-ns
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - executor
+                  topologyKey: kubernetes.io/hostname
+          automountServiceAccountToken: true
+          containers:
+            - env:
+                - name: KUBERNETES_POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.name
+                - name: KUBERNETES_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.namespace
+                - name: AWS_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      key: AWS_REGION
+                      name: executor
+                      optional: false
+                - name: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
+                      name: executor
+                      optional: false
+                - name: CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: CASE_STATUS_REFRESH_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: CASE_STATUS_REFRESH_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: COLLECTOR_TAG
+                  valueFrom:
+                    configMapKeyRef:
+                      key: COLLECTOR_TAG
+                      name: executor
+                      optional: false
+                - name: ENVIRONMENT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ENVIRONMENT
+                      name: executor
+                      optional: false
+                - name: EVENTS_STREAM_ARN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: EVENTS_STREAM_ARN
+                      name: executor
+                      optional: false
+                - name: INTERNAL_API_BASE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: INTERNAL_API_BASE_URL
+                      name: executor
+                      optional: false
+                - name: J1DS_ROLE_ARN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: J1DS_ROLE_ARN
+                      name: executor
+                      optional: false
+                - name: JIRA_INBOUND_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: JIRA_INBOUND_DEAD_LETTER_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: JIRA_INBOUND_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: JIRA_INBOUND_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: LOG_LEVEL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: LOG_LEVEL
+                      name: executor
+                      optional: false
+                - name: MAX_CONCURRENT_MESSAGES
+                  valueFrom:
+                    configMapKeyRef:
+                      key: MAX_CONCURRENT_MESSAGES
+                      name: executor
+                      optional: false
+                - name: METRICS_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: METRICS_ENABLED
+                      name: executor
+                      optional: false
+                - name: METRICS_EXPORTER
+                  valueFrom:
+                    configMapKeyRef:
+                      key: METRICS_EXPORTER
+                      name: executor
+                      optional: false
+                - name: NEO4J_AUTHENTICATION_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_AUTHENTICATION_ENABLED
+                      name: executor
+                      optional: false
+                - name: NEO4J_READER_HOSTNAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_READER_HOSTNAME
+                      name: executor
+                      optional: false
+                - name: NEO4J_SSL_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_SSL_ENABLED
+                      name: executor
+                      optional: false
+                - name: NEO4J_USERNAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_USERNAME
+                      name: executor
+                      optional: false
+                - name: NEO4J_WRITER_HOSTNAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_WRITER_HOSTNAME
+                      name: executor
+                      optional: false
+                - name: NODE_OPTIONS
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NODE_OPTIONS
+                      name: executor
+                      optional: false
+                - name: OTEL_ATTRIBUTE_COUNT_LIMIT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_ATTRIBUTE_COUNT_LIMIT
+                      name: executor
+                      optional: false
+                - name: OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT
+                      name: executor
+                      optional: false
+                - name: OTEL_COLLECTOR_FQDN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_COLLECTOR_FQDN
+                      name: executor
+                      optional: false
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_EXPORTER_OTLP_ENDPOINT
+                      name: executor
+                      optional: false
+                - name: OTEL_EXPORTER_OTLP_INSECURE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_EXPORTER_OTLP_INSECURE
+                      name: executor
+                      optional: false
+                - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+                      name: executor
+                      optional: false
+                - name: OTEL_RESOURCE_ATTRIBUTES
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_RESOURCE_ATTRIBUTES
+                      name: executor
+                      optional: false
+                - name: PIPELINE_OUTGOING_STREAM_ARN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: PIPELINE_OUTGOING_STREAM_ARN
+                      name: executor
+                      optional: false
+                - name: PLATFORM
+                  valueFrom:
+                    configMapKeyRef:
+                      key: PLATFORM
+                      name: executor
+                      optional: false
+                - name: POD_ID
+                  valueFrom:
+                    configMapKeyRef:
+                      key: POD_ID
+                      name: executor
+                      optional: false
+                - name: POD_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: POD_NAME
+                      name: executor
+                      optional: false
+                - name: QUERY_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: QUERY_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      key: REGION
+                      name: executor
+                      optional: false
+                - name: REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: REMEDIATION_REBUILD_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: REMEDIATION_REBUILD_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: SERVICE_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SERVICE_NAME
+                      name: executor
+                      optional: false
+                - name: SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG
+                      name: executor
+                      optional: false
+                - name: SYNC_JOB_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SYNC_JOB_DEAD_LETTER_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: SYNC_JOB_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SYNC_JOB_QUEUE_URL
+                      name: executor
+                      optional: false
+                - name: TRACING_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: TRACING_ENABLED
+                      name: executor
+                      optional: false
+                - name: NEO4J_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: NEO4J_PASSWORD
+                      name: executor
+                      optional: false
+              image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/executor/development:1.2.3
+              livenessProbe:
+                failureThreshold: 5
+                httpGet:
+                  path: /health/liveness
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                periodSeconds: 30
+                successThreshold: 1
+                timeoutSeconds: 15
+              name: executor
+              readinessProbe:
+                failureThreshold: 8
+                httpGet:
+                  path: /health
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 30
+                periodSeconds: 15
+                successThreshold: 1
+                timeoutSeconds: 10
+              resources:
+                limits:
+                  cpu: 1024m
+                  ephemeral-storage: 30Gi
+                  memory: 4Gi
+                requests:
+                  cpu: 50m
+                  ephemeral-storage: 8Gi
+                  memory: 1Gi
+          nodeSelector:
+            Team: platform-team
+            karpenter.sh/nodepool: platform-team
+          priorityClassName: high-priority
+          serviceAccountName: sample-ns-j1ql-executor
+          terminationGracePeriodSeconds: 30
+          tolerations:
+            - effect: NoSchedule
+              key: Team
+              operator: Equal
+              value: platform-team
+  3: |
+    apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: executor
+        app: executor
+        environment: sample-env
+        platform: aws_eks
+        service.name: executor
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: executor
+      name: executor
+      namespace: NAMESPACE
+    spec:
+      data:
+        - remoteRef:
+            conversionStrategy: Default
+            decodingStrategy: None
+            key: sample-app/sample-env/NEO4J_PASSWORD_POD_002
+            metadataPolicy: None
+          secretKey: NEO4J_PASSWORD
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: configuration-api-webhook
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: executor
+  4: |
+    apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: executor
+        app: executor
+        environment: sample-env
+        platform: aws_eks
+        service.name: executor
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: executor
+      name: executor
+      namespace: NAMESPACE
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          app: executor
+  5: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: executor
+        app: executor
+        environment: sample-env
+        platform: aws_eks
+        service.name: executor
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: executor
+      name: executor-pod-annotations
+      namespace: NAMESPACE
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - pods
+        verbs:
+          - update
+          - patch
+          - get
+  6: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: executor
+        app: executor
+        environment: sample-env
+        platform: aws_eks
+        service.name: executor
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: executor
+        tags.service.namespace: sample-ns
+      name: executor-pod-annotations
+      namespace: NAMESPACE
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: executor-pod-annotations
+    subjects:
+      - kind: ServiceAccount
+        name: sample-ns-j1ql-executor
+        namespace: NAMESPACE
+  7: |
+    apiVersion: autoscaling.k8s.io/v1
+    kind: VerticalPodAutoscaler
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: executor
+        app: executor
+        environment: sample-env
+        platform: aws_eks
+        service.name: executor
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: executor
+      name: executor-vpa
+      namespace: NAMESPACE
+    spec:
+      resourcePolicy:
+        containerPolicies:
+          - containerName: '*'
+            maxAllowed:
+              cpu: 8
+              memory: 8Gi
+            minAllowed:
+              cpu: 250m
+              memory: 1536Mi
+      targetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: executor
+      updatePolicy:
+        updateMode: "Off"
+http-service-keda-tgb-values fixture matches snapshot:
+  1: |
+    apiVersion: v1
+    data:
+      AWS_REGION: us-east-1
+      AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: "1"
+      CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-dead-letter-queue-103
+      CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-queue-103
+      COLLECTOR_TAG: latest
+      ENVIRONMENT: sample-env
+      EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/sample-app-events-stream-103
+      HTTP_MODE: "true"
+      INTERNAL_API_BASE_URL: https://api.example.internal
+      J1DS_ROLE_ARN: arn:aws:iam::123456789012:role/example-data-streaming
+      JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-dead-letter-queue-103
+      JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-queue-103
+      LOG_LEVEL: error
+      METRICS_ENABLED: "true"
+      METRICS_EXPORTER: otlp-grpc
+      NEO4J_AUTHENTICATION_ENABLED: "true"
+      NEO4J_READER_HOSTNAME: sample-pod.example.internal
+      NEO4J_SSL_ENABLED: "true"
+      NEO4J_USERNAME: neo4j
+      NEO4J_WRITER_HOSTNAME: sample-pod.example.internal
+      NODE_OPTIONS: --max-old-space-size=6144
+      OTEL_COLLECTOR_FQDN: otel-collector.opentelemetry-collector.svc.cluster.local
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.opentelemetry-collector.svc.cluster.local:4318
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
+      OTEL_RESOURCE_ATTRIBUTES: service.name=api,environment=sample-env,platform=aws_eks,build.id=1.0.100,project=sample-app,owner=@example/platform,
+      PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/query-domain-pipeline-outgoing-stream
+      PLATFORM: aws_eks
+      POD_ID: "103"
+      POD_NAME: sample-pod
+      QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-query-queue-103
+      REGION: us-east-1
+      REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-dead-letter-queue-103
+      REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-queue-103
+      SERVICE_NAME: api
+      SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG: "true"
+      SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-dead-letter-queue-103
+      SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-queue-103
+      TRACING_ENABLED: "false"
+    immutable: false
+    kind: ConfigMap
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+        tags.service.namespace: sample-ns
+      name: api
+      namespace: NAMESPACE
+  2: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        owner: '@example/platform'
+        tags.CodeOwner: '@example/platform'
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+        tags.service.namespace: sample-ns
+      name: api
+      namespace: NAMESPACE
+    spec:
+      replicas: 2
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: api
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            owner: '@example/platform'
+            reloader.stakater.com/auto: "true"
+            tags.CodeOwner: '@example/platform'
+          labels:
+            ManagedEnvironment: sample-env
+            ManagedProject: sample-app
+            ManagedService: api
+            app: api
+            environment: sample-env
+            platform: aws_eks
+            service.name: api
+            service.namespace: sample-ns
+            tags.environment: sample-env
+            tags.platform: aws_eks
+            tags.project: sample-app
+            tags.service.name: api
+            tags.service.namespace: sample-ns
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - api
+                  topologyKey: kubernetes.io/hostname
+          automountServiceAccountToken: true
+          containers:
+            - env:
+                - name: KUBERNETES_POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.name
+                - name: KUBERNETES_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.namespace
+                - name: AWS_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      key: AWS_REGION
+                      name: api
+                      optional: false
+                - name: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE
+                      name: api
+                      optional: false
+                - name: CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: CASE_STATUS_REFRESH_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: CASE_STATUS_REFRESH_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: COLLECTOR_TAG
+                  valueFrom:
+                    configMapKeyRef:
+                      key: COLLECTOR_TAG
+                      name: api
+                      optional: false
+                - name: ENVIRONMENT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: ENVIRONMENT
+                      name: api
+                      optional: false
+                - name: EVENTS_STREAM_ARN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: EVENTS_STREAM_ARN
+                      name: api
+                      optional: false
+                - name: HTTP_MODE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: HTTP_MODE
+                      name: api
+                      optional: false
+                - name: INTERNAL_API_BASE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: INTERNAL_API_BASE_URL
+                      name: api
+                      optional: false
+                - name: J1DS_ROLE_ARN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: J1DS_ROLE_ARN
+                      name: api
+                      optional: false
+                - name: JIRA_INBOUND_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: JIRA_INBOUND_DEAD_LETTER_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: JIRA_INBOUND_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: JIRA_INBOUND_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: LOG_LEVEL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: LOG_LEVEL
+                      name: api
+                      optional: false
+                - name: METRICS_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: METRICS_ENABLED
+                      name: api
+                      optional: false
+                - name: METRICS_EXPORTER
+                  valueFrom:
+                    configMapKeyRef:
+                      key: METRICS_EXPORTER
+                      name: api
+                      optional: false
+                - name: NEO4J_AUTHENTICATION_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_AUTHENTICATION_ENABLED
+                      name: api
+                      optional: false
+                - name: NEO4J_READER_HOSTNAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_READER_HOSTNAME
+                      name: api
+                      optional: false
+                - name: NEO4J_SSL_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_SSL_ENABLED
+                      name: api
+                      optional: false
+                - name: NEO4J_USERNAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_USERNAME
+                      name: api
+                      optional: false
+                - name: NEO4J_WRITER_HOSTNAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NEO4J_WRITER_HOSTNAME
+                      name: api
+                      optional: false
+                - name: NODE_OPTIONS
+                  valueFrom:
+                    configMapKeyRef:
+                      key: NODE_OPTIONS
+                      name: api
+                      optional: false
+                - name: OTEL_COLLECTOR_FQDN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_COLLECTOR_FQDN
+                      name: api
+                      optional: false
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_EXPORTER_OTLP_ENDPOINT
+                      name: api
+                      optional: false
+                - name: OTEL_EXPORTER_OTLP_INSECURE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_EXPORTER_OTLP_INSECURE
+                      name: api
+                      optional: false
+                - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+                      name: api
+                      optional: false
+                - name: OTEL_RESOURCE_ATTRIBUTES
+                  valueFrom:
+                    configMapKeyRef:
+                      key: OTEL_RESOURCE_ATTRIBUTES
+                      name: api
+                      optional: false
+                - name: PIPELINE_OUTGOING_STREAM_ARN
+                  valueFrom:
+                    configMapKeyRef:
+                      key: PIPELINE_OUTGOING_STREAM_ARN
+                      name: api
+                      optional: false
+                - name: PLATFORM
+                  valueFrom:
+                    configMapKeyRef:
+                      key: PLATFORM
+                      name: api
+                      optional: false
+                - name: POD_ID
+                  valueFrom:
+                    configMapKeyRef:
+                      key: POD_ID
+                      name: api
+                      optional: false
+                - name: POD_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: POD_NAME
+                      name: api
+                      optional: false
+                - name: QUERY_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: QUERY_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      key: REGION
+                      name: api
+                      optional: false
+                - name: REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: REMEDIATION_REBUILD_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: REMEDIATION_REBUILD_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: SERVICE_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SERVICE_NAME
+                      name: api
+                      optional: false
+                - name: SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG
+                      name: api
+                      optional: false
+                - name: SYNC_JOB_DEAD_LETTER_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SYNC_JOB_DEAD_LETTER_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: SYNC_JOB_QUEUE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SYNC_JOB_QUEUE_URL
+                      name: api
+                      optional: false
+                - name: TRACING_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: TRACING_ENABLED
+                      name: api
+                      optional: false
+                - name: NEO4J_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: NEO4J_PASSWORD
+                      name: api
+                      optional: false
+              image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/api:1.2.3
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - sleep
+                      - "20"
+              livenessProbe:
+                failureThreshold: 5
+                httpGet:
+                  path: /health/liveness
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                periodSeconds: 30
+                successThreshold: 1
+                timeoutSeconds: 15
+              name: api
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 4000
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 8
+                httpGet:
+                  path: /private/engine/103/health-check
+                  port: 4000
+                  scheme: HTTP
+                initialDelaySeconds: 30
+                periodSeconds: 15
+                successThreshold: 1
+                timeoutSeconds: 10
+              resources:
+                limits:
+                  cpu: 2048m
+                  ephemeral-storage: 15Gi
+                  memory: 8Gi
+                requests:
+                  cpu: 2048m
+                  ephemeral-storage: 8Gi
+                  memory: 8Gi
+          nodeSelector:
+            Team: platform-team
+            karpenter.sh/nodepool: platform-team
+          priorityClassName: high-priority
+          serviceAccountName: sample-ns-api
+          terminationGracePeriodSeconds: 60
+          tolerations:
+            - effect: NoSchedule
+              key: Team
+              operator: Equal
+              value: platform-team
+  3: |
+    apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api
+      namespace: NAMESPACE
+    spec:
+      data:
+        - remoteRef:
+            conversionStrategy: Default
+            decodingStrategy: None
+            key: sample-app/sample-env/NEO4J_PASSWORD_POD_103
+            metadataPolicy: None
+          secretKey: NEO4J_PASSWORD
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: configuration-api-webhook
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: api
+  4: |
+    apiVersion: keda.sh/v1alpha1
+    kind: TriggerAuthentication
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api-aws-credentials
+      namespace: NAMESPACE
+    spec:
+      podIdentity:
+        provider: aws
+  5: |
+    apiVersion: keda.sh/v1alpha1
+    kind: ScaledObject
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api-sqs-scaler
+      namespace: NAMESPACE
+    spec:
+      maxReplicaCount: 10
+      minReplicaCount: 2
+      scaleTargetRef:
+        name: api
+      triggers:
+        - authenticationRef:
+            name: api-aws-credentials
+          metadata:
+            activationTargetMetricValue: "0"
+            awsRegion: us-east-1
+            dimensionName: LoadBalancer;TargetGroup
+            dimensionValue: app/sample-alb/0123456789abcdef;targetgroup/sample-web-tg/0123456789abcdef
+            metricCollectionTime: "300"
+            metricName: TargetResponseTime
+            metricStat: Average
+            metricStatPeriod: "300"
+            minMetricValue: "0"
+            namespace: AWS/ApplicationELB
+            targetMetricValue: "5"
+          type: aws-cloudwatch
+  6: |
+    apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api
+      namespace: NAMESPACE
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          app: api
+  7: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api-pod-annotations
+      namespace: NAMESPACE
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - pods
+        verbs:
+          - update
+          - patch
+          - get
+  8: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        service.namespace: sample-ns
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+        tags.service.namespace: sample-ns
+      name: api-pod-annotations
+      namespace: NAMESPACE
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: api-pod-annotations
+    subjects:
+      - kind: ServiceAccount
+        name: sample-ns-api
+        namespace: NAMESPACE
+  9: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api
+      namespace: NAMESPACE
+    spec:
+      ports:
+        - port: 4000
+          protocol: TCP
+          targetPort: 4000
+      selector:
+        app: api
+      type: ClusterIP
+  10: |
+    apiVersion: elbv2.k8s.aws/v1beta1
+    kind: TargetGroupBinding
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api-tgb
+      namespace: NAMESPACE
+    spec:
+      networking:
+        ingress:
+          - from:
+              - securityGroup:
+                  groupID: sg-0123456789abcdef0
+            ports:
+              - port: 4000
+                protocol: TCP
+      serviceRef:
+        name: api
+        port: 4000
+      targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/sample-web-tg/0123456789abcdef
+      targetType: ip
+      vpcID: vpc-0123456789abcdef0
+  11: |
+    apiVersion: autoscaling.k8s.io/v1
+    kind: VerticalPodAutoscaler
+    metadata:
+      labels:
+        ManagedEnvironment: sample-env
+        ManagedProject: sample-app
+        ManagedService: api
+        app: api
+        environment: sample-env
+        platform: aws_eks
+        service.name: api
+        tags.environment: sample-env
+        tags.platform: aws_eks
+        tags.project: sample-app
+        tags.service.name: api
+      name: api-vpa
+      namespace: NAMESPACE
+    spec:
+      resourcePolicy:
+        containerPolicies:
+          - containerName: '*'
+            maxAllowed:
+              cpu: 4
+              memory: 4Gi
+            minAllowed:
+              cpu: 50m
+              memory: 128Mi
+      targetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: api
+      updatePolicy:
+        updateMode: "Off"
+legacy-values fixture matches snapshot:
+  1: |
+    apiVersion: v1
+    data:
+      LOG_LEVEL: info
+    kind: ConfigMap
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app-app-config
+      namespace: NAMESPACE
+  2: |
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: hourly
+      namespace: NAMESPACE
+    spec:
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app: legacy-app
+            spec:
+              containers:
+                - env:
+                    - name: MODE
+                      value: hourly
+                  image: docker.io/busybox:1.36
+                  name: hourly
+              restartPolicy: OnFailure
+              serviceAccountName: legacy-app
+      schedule: 0 * * * *
+  3: |
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: nightly
+      namespace: NAMESPACE
+    spec:
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app: legacy-app
+            spec:
+              containers:
+                - args:
+                    - echo nightly
+                  command:
+                    - /bin/sh
+                    - -c
+                  image: docker.io/busybox:1.36
+                  name: nightly
+              restartPolicy: OnFailure
+              serviceAccountName: legacy-app
+      schedule: 0 2 * * *
+  4: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app
+      namespace: NAMESPACE
+    spec:
+      replicas: 2
+      selector:
+        matchLabels:
+          app: legacy-app
+      strategy:
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app: legacy-app
+        spec:
+          containers:
+            - env:
+                - name: ENVIRONMENT
+                  value: dev
+              envFrom:
+                - configMapRef:
+                    name: legacy-app-app-config
+              image: docker.io/nginx:1.27
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /path
+                  port: 8080
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              name: legacy-app
+              ports:
+                - containerPort: 8080
+                  name: http
+              readinessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /path
+                  port: 8080
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              resources:
+                limits:
+                  cpu: 0.5
+                  memory: 256Mi
+                requests:
+                  cpu: 0.1
+                  memory: 128Mi
+          serviceAccountName: legacy-app
+  5: |
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app
+      namespace: NAMESPACE
+    spec:
+      maxReplicas: 4
+      metrics:
+        - resource:
+            name: cpu
+            target:
+              averageUtilization: 70
+              type: Utilization
+          type: Resource
+      minReplicas: 2
+      scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: legacy-app
+  6: |
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app
+      namespace: NAMESPACE
+    spec:
+      ingressClassName: nginx
+      rules:
+        - host: legacy.example.com
+          http:
+            paths:
+              - backend:
+                  service:
+                    name: legacy-app
+                    port:
+                      name: http
+                path: /
+                pathType: ImplementationSpecific
+  7: |
+    apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app
+      namespace: NAMESPACE
+    spec:
+      minAvailable: 1
+      selector:
+        matchLabels:
+          app: legacy-app
+  8: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app-role-configmaps
+      namespace: NAMESPACE
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - configmaps
+        verbs:
+          - get
+  9: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app-role-secrets
+      namespace: NAMESPACE
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - secrets
+        verbs:
+          - get
+  10: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app-rolebinding-configmaps
+      namespace: NAMESPACE
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: legacy-app-role-configmaps
+    subjects:
+      - kind: ServiceAccount
+        name: legacy-app
+        namespace: NAMESPACE
+  11: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app-rolebinding-secrets
+      namespace: NAMESPACE
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: legacy-app-role-secrets
+    subjects:
+      - kind: ServiceAccount
+        name: legacy-app
+        namespace: NAMESPACE
+  12: |
+    apiVersion: v1
+    data:
+      API_KEY: bm90LWEtcmVhbC1rZXk=
+    kind: Secret
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app-creds
+      namespace: NAMESPACE
+  13: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app
+      namespace: NAMESPACE
+    spec:
+      ports:
+        - name: http
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app: legacy-app
+      type: ClusterIP
+  14: |
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      labels:
+        chart: application
+        group: io.jupiterone.platform
+        heritage: Helm
+        release: RELEASE-NAME
+        team: sre
+      name: legacy-app
+      namespace: NAMESPACE

@@ -1,0 +1,59 @@
+suite: configmap
+templates:
+  - configmap.yaml
+tests:
+  - it: fan-out ConfigMap defaults to applicationName
+    set:
+      deployment.envFromConfigMap:
+        keys:
+          LOG_LEVEL: info
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: application
+
+  - it: fan-out ConfigMap name overrides via envFromConfigMap.name
+    set:
+      deployment.envFromConfigMap:
+        name: my-config
+        keys:
+          LOG_LEVEL: info
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-config
+
+  - it: immutable renders when set
+    set:
+      deployment.envFromConfigMap:
+        immutable: true
+        keys:
+          LOG_LEVEL: info
+    asserts:
+      - equal:
+          path: immutable
+          value: true
+
+  - it: immutable is absent by default
+    set:
+      deployment.envFromConfigMap:
+        keys:
+          LOG_LEVEL: info
+    asserts:
+      - notExists:
+          path: immutable
+
+  - it: data equals the keys map with values coerced to strings
+    set:
+      deployment.envFromConfigMap:
+        keys:
+          PORT: 8080
+          ENABLED: true
+    asserts:
+      - equal:
+          path: data
+          value:
+            PORT: "8080"
+            ENABLED: "true"

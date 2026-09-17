@@ -1,0 +1,12 @@
+suite: certificate
+templates:
+  - certificate.yaml
+tests:
+  - it: renders cert-manager.io/v1 Certificate
+    set:
+      certificate.enabled: true
+    asserts:
+      - isAPIVersion:
+          of: cert-manager.io/v1
+      - isKind:
+          of: Certificate

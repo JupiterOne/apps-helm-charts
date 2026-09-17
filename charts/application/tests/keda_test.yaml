@@ -1,0 +1,54 @@
+suite: keda
+templates:
+  - keda.yaml
+tests:
+  - it: enabled false renders nothing
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: ScaledObject name defaults to applicationName-scaler
+    set:
+      keda.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: application-scaler
+        documentSelector:
+          path: kind
+          value: ScaledObject
+
+  - it: each trigger carries authenticationRef.name equal to the TriggerAuthentication name
+    set:
+      keda.enabled: true
+      keda.triggers:
+        - type: aws-sqs-queue
+          metadata:
+            queueURL: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+    asserts:
+      - equal:
+          path: metadata.name
+          value: application-aws-credentials
+        documentSelector:
+          path: kind
+          value: TriggerAuthentication
+      - equal:
+          path: spec.triggers[0].authenticationRef.name
+          value: application-aws-credentials
+        documentSelector:
+          path: kind
+          value: ScaledObject
+
+  - it: no authenticationRef when triggerAuthentication.enabled is false
+    set:
+      keda.enabled: true
+      keda.triggerAuthentication.enabled: false
+      keda.triggers:
+        - type: aws-sqs-queue
+          metadata:
+            queueURL: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.triggers[0].authenticationRef

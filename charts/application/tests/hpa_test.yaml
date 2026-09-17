@@ -1,0 +1,12 @@
+suite: hpa
+templates:
+  - hpa.yaml
+tests:
+  - it: renders autoscaling/v2 HorizontalPodAutoscaler
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - isAPIVersion:
+          of: autoscaling/v2
+      - isKind:
+          of: HorizontalPodAutoscaler
