@@ -30,8 +30,10 @@ jobs:
       with:
         APP_ID: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_APP_ID }}
         APP_PEM: ${{ secrets.J1_SRE_GITHUB_AUTOMATION_PRIVATE_KEY }}
-    # v6 handles the GnuPG 2.4 agent on current runners; v5 left git commit signing
-    # unable to reach the passphrase ("gpg failed to sign the data", run 35260306671).
+    # Commits are not GPG-signed: the bot key (FF29CF9AEA89BB8B) expired 2024-09-05, which
+    # is what failed the 1.1.0 and 1.1.1 releases ("Unusable secret key"), and no ruleset on
+    # this repository requires signed commits. Chart provenance is still signed below (helm
+    # verify does not enforce key expiry). Set back to true once the key is rotated.
     - name: Import GPG key
       id: import_gpg
       uses: crazy-max/ghaction-import-gpg@v6
@@ -39,7 +41,7 @@ jobs:
         gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
         passphrase: ${{ secrets.GPG_PASSPHRASE }}
         git_user_signingkey: true
-        git_commit_gpgsign: true
+        git_commit_gpgsign: false
     - name: Convert gpg keys to legacy format (needed by helm)
       run: |
         gpg --export >~/.gnupg/pubring.gpg
@@ -56,6 +58,12 @@ jobs:
         GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"    
     - name: List GPG keys
       run: gpg -K
+    - name: Warn when the signing key is expired or revoked
+      run: |
+        state=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print $2; exit}')
+        if [ "$state" = "e" ] || [ "$state" = "r" ]; then
+          echo "::warning title=GPG signing key unusable::secret key validity is '$state' (e=expired, r=revoked); rotate GPG_PRIVATE_KEY and publickey.asc"
+        fi
     - name: Configure Git
       run: |
         git config user.name "j1-sre-github-automation"
