@@ -103,14 +103,8 @@ jobs:
     - name: Dry Run Chart
       run: |
         helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug
-    - name: Run chart-releaser
-      uses: helm/chart-releaser-action@v1.6.0
-      with:
-        config: cr.yaml
-        # A rerun after a partial release must not fail on the release that already exists.
-        skip_existing: true
-      env:
-        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    # Record the version before publishing it: bump commit, then the v<version> tag GitVersion
+    # counts from, so the next run computes the next patch even if publishing fails.
     - name: Commit and push files
       if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
       run: |
@@ -131,6 +125,14 @@ jobs:
         custom_tag: ${{ steps.gitversion.outputs.majorMinorPatch }}
         tag_prefix: v
         commit_sha: ${{ env.GITHUB_SHA }}   
+    # Publishing runs LAST: the version is already committed and tagged above, so a failure
+    # here leaves a version unpublished, never a published version that was not recorded.
+    - name: Run chart-releaser
+      uses: helm/chart-releaser-action@v1.6.0
+      with:
+        config: cr.yaml
+      env:
+        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     - name: Clean Up
       if: failure()
       run: |
