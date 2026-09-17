@@ -4,8 +4,7 @@ apiVersion: "monitoring.coreos.com/v1"
 kind: ServiceMonitor
 metadata:
   labels:
-{{ include "application.labels.team" . | indent 4 }}
-{{ include "application.labels.chart" . | indent 4 }}
+{{ include "application.labels.metadata" . | indent 4 }}
 {{- if .Values.serviceMonitor.additionalLabels }}
 {{ toYaml .Values.serviceMonitor.additionalLabels | indent 4 }}
 {{- end }}

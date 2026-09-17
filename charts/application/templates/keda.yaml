@@ -1,0 +1,78 @@
+{{- if .Values.keda }}
+{{- if .Values.keda.enabled }}
+{{- $name := .Values.keda.name | default (printf "%s-scaler" (include "application.name" .)) }}
+{{- $auth := .Values.keda.triggerAuthentication | default dict }}
+{{- $authName := $auth.name | default (printf "%s-aws-credentials" (include "application.name" .)) }}
+{{- if or (not (hasKey $auth "enabled")) $auth.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  labels:
+{{ include "application.labels.metadata" . | indent 4 }}
+  name: {{ $authName }}
+  namespace: {{ template "application.namespace" . }}
+spec:
+  {{- if $auth.spec }}
+{{ toYaml $auth.spec | indent 2 }}
+  {{- else }}
+  podIdentity:
+    provider: {{ $auth.podIdentityProvider | default "aws" }}
+  {{- end }}
+{{- end }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  labels:
+{{ include "application.labels.metadata" . | indent 4 }}
+{{- if .Values.keda.additionalLabels }}
+{{ toYaml .Values.keda.additionalLabels | indent 4 }}
+{{- end }}
+{{- if .Values.keda.annotations }}
+  annotations:
+{{ toYaml .Values.keda.annotations | indent 4 }}
+{{- end }}
+  name: {{ $name }}
+  namespace: {{ template "application.namespace" . }}
+spec:
+  scaleTargetRef:
+    {{- with .Values.keda.scaleTargetRef }}
+    {{- with .apiVersion }}
+    apiVersion: {{ . }}
+    {{- end }}
+    {{- with .kind }}
+    kind: {{ . }}
+    {{- end }}
+    {{- end }}
+    name: {{ (.Values.keda.scaleTargetRef | default dict).name | default (include "application.name" .) }}
+  {{- if not (kindIs "invalid" .Values.keda.minReplicaCount) }}
+  minReplicaCount: {{ .Values.keda.minReplicaCount }}
+  {{- end }}
+  {{- if not (kindIs "invalid" .Values.keda.maxReplicaCount) }}
+  maxReplicaCount: {{ .Values.keda.maxReplicaCount }}
+  {{- end }}
+  {{- with .Values.keda.pollingInterval }}
+  pollingInterval: {{ . }}
+  {{- end }}
+  {{- with .Values.keda.cooldownPeriod }}
+  cooldownPeriod: {{ . }}
+  {{- end }}
+  {{- with .Values.keda.advanced }}
+  advanced:
+{{ toYaml . | indent 4 }}
+  {{- end }}
+  triggers:
+  {{- range .Values.keda.triggers }}
+    - type: {{ .type }}
+      {{- if or (not (hasKey $auth "enabled")) $auth.enabled }}
+      authenticationRef:
+        name: {{ .authenticationRef | default $authName }}
+      {{- end }}
+      metadata:
+        {{- range $k, $v := .metadata }}
+        {{ $k }}: {{ include "application.tplvalues.render" (dict "value" ($v | toString) "context" $) | quote }}
+        {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

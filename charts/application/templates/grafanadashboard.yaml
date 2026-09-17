@@ -7,8 +7,7 @@ metadata:
   labels:
     # this label is used as selector by grafana operator to discover availale grafana dashboards from configmaps
     grafana_dashboard: '1'
-{{ include "application.labels.team" $ | indent 4 }}
-{{ include "application.labels.chart" $ | indent 4 }}
+{{ include "application.labels.metadata" $ | indent 4 }}
 {{- if $.Values.grafanaDashboard.additionalLabels }}
 {{ toYaml $.Values.grafanaDashboard.additionalLabels | indent 4 }}
 {{- end }}

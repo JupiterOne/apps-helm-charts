@@ -53,6 +53,14 @@ To uninstall the chart:
 | labels.group | Label to define application group                                                  | `io.jupiterone.platform`                     |
 | labels.team | Label to define team                                                                | `sre`                                  |
 
+### Global label and annotation Parameters
+
+| Name | Description | Value |
+| ---| ---| ---|
+| labels.chartLabels | Stamp group/team/chart/release/heritage on every object. Set `false` when live objects must carry exactly the labels you declare | `true` |
+| commonLabels | Labels added to every object's metadata and every pod template | `{}` |
+| commonAnnotations | Annotations added to Deployment/CronJob metadata and their pod templates | `{}` |
+
 ### Deployment Paramaters
 
 | Name                     | Description                                                                                  | Value           |
@@ -77,6 +85,20 @@ To uninstall the chart:
 | deployment.ports | Ports for primary container                                                                          | `[]`            |
 | deployment.securityContext | Security Context for the pod                                                               | `{}`            |
 | deployment.additionalContainers | Add additional containers besides init and app containers                             | `[]             |
+
+| deployment.containerName | Name of the primary container | `applicationName` |
+| deployment.revisionHistoryLimit | Deployment `revisionHistoryLimit`, rendered when set | `` |
+| deployment.minReadySeconds | Deployment `minReadySeconds`, rendered when set | `` |
+| deployment.progressDeadlineSeconds | Deployment `progressDeadlineSeconds`, rendered when set | `` |
+| deployment.priorityClassName | Pod `priorityClassName` | `` |
+| deployment.terminationGracePeriodSeconds | Pod `terminationGracePeriodSeconds`, rendered when set | `` |
+| deployment.automountServiceAccountToken | Pod `automountServiceAccountToken`, rendered when set | `` |
+| deployment.topologySpreadConstraints | Pod topology spread constraints (templated) | `[]` |
+| deployment.lifecycle | Primary container lifecycle hooks | `{}` |
+| deployment.containerSecurityContext | Primary container security context | `{}` |
+| deployment.envDownwardApi | Env entries from the downward API, rendered first: `[{name, fieldPath}]` | `[]` |
+| deployment.envFromConfigMap | One map (`keys`) rendered as a ConfigMap (`name`, `immutable`) and as one `configMapKeyRef` entry per key | `{}` |
+| deployment.envSecretKeys | `secretKeyRef` env entries rendered last: strings or `{name, key, secretName}` | `[]` |
 
 #### Deployment Resources Parameters
 
@@ -116,6 +138,8 @@ To uninstall the chart:
 | deployment.image.repository | Image repository for the application                                                      | `repository/image-name`  |
 | deployment.image.tag | Tag of the application Image                                                                     | `v1.0.0`        |
 | deployment.image.pullPolicy | Pull policy for the application image                                                     | `IfNotPresent`  |
+
+| deployment.image.ref | Complete image reference (`repository:tag` or `repository@digest`); wins over `repository`/`tag` | `""` |
 
 #### Deployment envFrom Parameters
 
@@ -185,6 +209,9 @@ Periodic probe of container liveness. Container will be restarted if the probe f
 | pdb.maxUnavailable | The number of pods that can be unavailable after the eviction. Either minAvailable or maxUnavailable needs to be provided | `` |
 
 
+| pdb.maxUnavailable | Rendered independently of `minAvailable`; set the other to `null` | `` |
+| pdb.additionalLabels | Additional labels for the PDB | `{}` |
+
 ### Persistence Paramaters
 
 | Name                     | Description                                                                                  | Value           |
@@ -213,6 +240,8 @@ Periodic probe of container liveness. Container will be restarted if the probe f
 
 
 
+| service.selectorFromPodLabels | Add `deployment.podLabels` to the Service selector. `false` selects on the `app` label only | `true` |
+
 ### Ingress Paramaters
 
 | Name | Description | Value |
@@ -236,6 +265,11 @@ Periodic probe of container liveness. Container will be restarted if the probe f
 | rbac.serviceAccount.additionalLabels | Labels for serviceAccount                                                                                                                                                                        | `{}`                                                                                                                                                  |
 | rbac.serviceAccount.annotations | Annotations for serviceAccount                                                                                                                                                                   | `{}`                                                                                                                                                  |
 | rbac.roles | Array of roles                                                                                                                                                                                   | `[]`                                                                                                                                                  |
+
+| rbac.roles[].roleName | Override the Role name (`<applicationName>-role-<name>`) | `` |
+| rbac.roles[].bindingName | Override the RoleBinding name (`<applicationName>-rolebinding-<name>`) | `` |
+| rbac.roles[].roleLabels | Additional labels on that Role | `{}` |
+| rbac.roles[].bindingLabels | Additional labels on that RoleBinding | `{}` |
 
 ### ConfigMap Paramaters
 
@@ -347,6 +381,56 @@ Periodic probe of container liveness. Container will be restarted if the probe f
 | grafanaDashboard.contents | Array of objects of type: - key: grafanadashboardjsoncontents                               | `[]`            |
                                                         
 
+### VerticalPodAutoscaler Parameters
+
+| Name | Description | Value |
+| ---| ---| ---|
+| vpa.enabled | Render a `VerticalPodAutoscaler` targeting the Deployment | `false` |
+| vpa.name | VPA name | `<applicationName>-vpa` |
+| vpa.targetRef | `{apiVersion, kind, name}` of the scaled workload | Deployment `<applicationName>` |
+| vpa.updateMode | `updatePolicy.updateMode` (quoted; `Off` is recommendation-only) | `"Off"` |
+| vpa.containerName | Container the bounds apply to | `"*"` |
+| vpa.minAllowed / vpa.maxAllowed | Resource bounds | `{}` |
+| vpa.containerPolicies | Full `containerPolicies` list; replaces the three keys above | `[]` |
+
+### KEDA Parameters
+
+| Name | Description | Value |
+| ---| ---| ---|
+| keda.enabled | Render a `ScaledObject` (and a `TriggerAuthentication`) | `false` |
+| keda.name | ScaledObject name | `<applicationName>-scaler` |
+| keda.scaleTargetRef | `{apiVersion, kind, name}` of the scaled workload | `<applicationName>` |
+| keda.minReplicaCount / keda.maxReplicaCount | Replica bounds | `` |
+| keda.pollingInterval / keda.cooldownPeriod / keda.advanced | Passed through | `` |
+| keda.triggerAuthentication.enabled | Render the TriggerAuthentication and reference it from every trigger | `true` |
+| keda.triggerAuthentication.name | TriggerAuthentication name | `<applicationName>-aws-credentials` |
+| keda.triggerAuthentication.podIdentityProvider | `spec.podIdentity.provider` | `aws` |
+| keda.triggerAuthentication.spec | Full spec, replaces `podIdentity` | `` |
+| keda.triggers | Triggers rendered verbatim: `[{type, metadata, authenticationRef}]`; metadata values may use templates | `[]` |
+
+### ExternalSecret Parameters
+
+| Name | Description | Value |
+| ---| ---| ---|
+| externalSecret.enabled | Render an `ExternalSecret` | `false` |
+| externalSecret.name | ExternalSecret name, also the default target Secret name | `applicationName` |
+| externalSecret.refreshInterval | Refresh interval | `1h` |
+| externalSecret.secretStoreRef.name / .kind | Store reference | `` / `ClusterSecretStore` |
+| externalSecret.target.name / .creationPolicy / .deletionPolicy / .template | Target Secret settings | `` / `Owner` / `Retain` / `` |
+| externalSecret.data | `[{secretKey, remoteRef: {key, property, version}}]`; `key` is templated; conversion/decoding/metadata strategies default to the ESO defaults so GitOps diffs stay clean | `[]` |
+| externalSecret.dataFrom | Passed through | `[]` |
+
+### TargetGroupBinding Parameters
+
+| Name | Description | Value |
+| ---| ---| ---|
+| targetGroupBinding.enabled | Render an AWS Load Balancer Controller `TargetGroupBinding` | `false` |
+| targetGroupBinding.name | Object name | `<applicationName>-tgb` |
+| targetGroupBinding.targetGroupARN / targetGroupName | Target group, one of the two | `` |
+| targetGroupBinding.targetType | `ip` or `instance` | `ip` |
+| targetGroupBinding.serviceRef.name / .port | Service to bind | `applicationName` / `` |
+| targetGroupBinding.networking / vpcID / nodeSelector | Passed through | `` |
+
 ### CronJob Parameters
 
 | Name                     | Description                                                                                  | Value           |
@@ -377,6 +461,15 @@ Job paramater for each cronjob object at `cronJob.jobs`
 | `<name>.tolerations`               | Tolerations of cronjob                                                                       | 
 | `<name>.restartPolicy`             | RestartPolicy of cronjob                                                                     |
 | `<name>.imagePullSecrets`          | ImagePullSecrets of cronjob                                                                     |
+
+| cronJob.jobs.NAME.timeZone / suspend / startingDeadlineSeconds | CronJob spec fields, rendered when set | `` |
+| cronJob.jobs.NAME.backoffLimit / activeDeadlineSeconds / ttlSecondsAfterFinished / parallelism / completions | Job spec fields, rendered when set | `` |
+| cronJob.jobs.NAME.containerName | Container name | job name |
+| cronJob.jobs.NAME.podLabels / podAnnotations | Job pod template labels and annotations | `{}` |
+| cronJob.jobs.NAME.jobLabels / jobAnnotations | `jobTemplate.metadata` labels and annotations | `{}` |
+| cronJob.jobs.NAME.priorityClassName / terminationGracePeriodSeconds / automountServiceAccountToken / topologySpreadConstraints / securityContext / containerSecurityContext | Pod and container fields | `` |
+| cronJob.jobs.NAME.envDownwardApi / envFromConfigMap / envSecretKeys | Same env model as the Deployment | `` |
+| cronJob.jobs.NAME.image.ref | Complete image reference; wins over `repository`/`tag` | `` |
 
 ## Naming convention for ConfigMap and Secrets
 

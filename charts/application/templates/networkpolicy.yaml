@@ -4,8 +4,7 @@ apiVersion: "networking.k8s.io/v1"
 kind: NetworkPolicy
 metadata:
   labels:
-{{ include "application.labels.team" . | indent 4 }}
-{{ include "application.labels.chart" . | indent 4 }}
+{{ include "application.labels.metadata" . | indent 4 }}
 {{- if .Values.networkPolicy.additionalLabels }}
 {{ toYaml .Values.networkPolicy.additionalLabels | indent 4 }}
 {{- end }}

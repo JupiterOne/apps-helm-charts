@@ -1,0 +1,260 @@
+# Rendered from JupiterOne/sample-app live-parity fixtures (2026-09-16). Exercises the
+# env fan-out, downward API, ExternalSecret keys and the opt-out of chart labels.
+applicationName: api
+labels:
+  chartLabels: false
+commonLabels:
+  ManagedEnvironment: sample-env
+  ManagedProject: sample-app
+  ManagedService: api
+  app: api
+  environment: sample-env
+  platform: aws_eks
+  service.name: api
+  tags.environment: sample-env
+  tags.platform: aws_eks
+  tags.project: sample-app
+  tags.service.name: api
+commonAnnotations:
+  owner: '@example/platform'
+  tags.CodeOwner: '@example/platform'
+rbac:
+  enabled: true
+  serviceAccount:
+    enabled: false
+    name: sample-ns-api
+  roles:
+  - name: pod-annotations
+    roleName: api-pod-annotations
+    bindingName: api-pod-annotations
+    roleLabels: {}
+    bindingLabels:
+      service.namespace: sample-ns
+      tags.service.namespace: sample-ns
+    rules:
+    - apiGroups:
+      - ''
+      resources:
+      - pods
+      verbs:
+      - update
+      - patch
+      - get
+service:
+  enabled: true
+  type: ClusterIP
+  selectorFromPodLabels: false
+  ports:
+  - port: 4000
+    targetPort: 4000
+    protocol: TCP
+pdb:
+  enabled: true
+  minAvailable: null
+  maxUnavailable: 1
+deployment:
+  enabled: true
+  replicas: 2
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  additionalPodAnnotations:
+    reloader.stakater.com/auto: 'true'
+  podLabels: &id001
+    service.namespace: sample-ns
+    tags.service.namespace: sample-ns
+  additionalLabels: *id001
+  priorityClassName: high-priority
+  terminationGracePeriodSeconds: 60
+  automountServiceAccountToken: true
+  nodeSelector:
+    Team: platform-team
+    karpenter.sh/nodepool: platform-team
+  tolerations:
+  - effect: NoSchedule
+    key: Team
+    operator: Equal
+    value: platform-team
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - api
+        topologyKey: kubernetes.io/hostname
+  containerName: api
+  image:
+    ref: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/api:1.2.3
+    pullPolicy: null
+  resources:
+    limits:
+      cpu: 2048m
+      ephemeral-storage: 15Gi
+      memory: 8Gi
+    requests:
+      cpu: 2048m
+      ephemeral-storage: 8Gi
+      memory: 8Gi
+  ports:
+  - containerPort: 8080
+    protocol: TCP
+  - containerPort: 4000
+    protocol: TCP
+  lifecycle:
+    preStop:
+      exec:
+        command:
+        - sleep
+        - '20'
+  envDownwardApi:
+  - name: KUBERNETES_POD_NAME
+    fieldPath: metadata.name
+  - name: KUBERNETES_NAMESPACE
+    fieldPath: metadata.namespace
+  envFromConfigMap:
+    name: api
+    immutable: false
+    keys:
+      AWS_REGION: us-east-1
+      AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'
+      CASE_STATUS_REFRESH_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-dead-letter-queue-103
+      CASE_STATUS_REFRESH_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-case-status-refresh-queue-103
+      COLLECTOR_TAG: latest
+      ENVIRONMENT: sample-env
+      EVENTS_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/sample-app-events-stream-103
+      HTTP_MODE: 'true'
+      INTERNAL_API_BASE_URL: https://api.example.internal
+      J1DS_ROLE_ARN: arn:aws:iam::123456789012:role/example-data-streaming
+      JIRA_INBOUND_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-dead-letter-queue-103
+      JIRA_INBOUND_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-jira-inbound-queue-103
+      LOG_LEVEL: error
+      METRICS_ENABLED: 'true'
+      METRICS_EXPORTER: otlp-grpc
+      NEO4J_AUTHENTICATION_ENABLED: 'true'
+      NEO4J_READER_HOSTNAME: sample-pod.example.internal
+      NEO4J_SSL_ENABLED: 'true'
+      NEO4J_USERNAME: neo4j
+      NEO4J_WRITER_HOSTNAME: sample-pod.example.internal
+      NODE_OPTIONS: --max-old-space-size=6144
+      OTEL_COLLECTOR_FQDN: otel-collector.opentelemetry-collector.svc.cluster.local
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.opentelemetry-collector.svc.cluster.local:4318
+      OTEL_EXPORTER_OTLP_INSECURE: 'true'
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
+      OTEL_RESOURCE_ATTRIBUTES: service.name=api,environment=sample-env,platform=aws_eks,build.id=1.0.100,project=sample-app,owner=@example/platform,
+      PIPELINE_OUTGOING_STREAM_ARN: arn:aws:kinesis:us-east-1:123456789012:stream/query-domain-pipeline-outgoing-stream
+      PLATFORM: aws_eks
+      POD_ID: '103'
+      POD_NAME: sample-pod
+      QUERY_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-query-queue-103
+      REGION: us-east-1
+      REMEDIATION_REBUILD_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-dead-letter-queue-103
+      REMEDIATION_REBUILD_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-remediation-rebuild-queue-103
+      SERVICE_NAME: api
+      SHOULD_USE_SECRETS_MANAGER_FOR_NEO4J_CONFIG: 'true'
+      SYNC_JOB_DEAD_LETTER_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-dead-letter-queue-103
+      SYNC_JOB_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/123456789012/sample-app-sync-job-queue-103
+      TRACING_ENABLED: 'false'
+    additionalLabels: *id001
+  envSecretKeys:
+  - name: NEO4J_PASSWORD
+    secretName: api
+  livenessProbe:
+    enabled: true
+    failureThreshold: 5
+    httpGet:
+      path: /health/liveness
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    successThreshold: 1
+    timeoutSeconds: 15
+  readinessProbe:
+    enabled: true
+    failureThreshold: 8
+    httpGet:
+      path: /private/engine/103/health-check
+      port: 4000
+      scheme: HTTP
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 10
+externalSecret:
+  enabled: true
+  name: api
+  refreshInterval: 1h
+  secretStoreRef:
+    name: configuration-api-webhook
+    kind: ClusterSecretStore
+  target:
+    name: api
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+  - secretKey: NEO4J_PASSWORD
+    remoteRef:
+      key: sample-app/sample-env/NEO4J_PASSWORD_POD_103
+      conversionStrategy: Default
+      decodingStrategy: None
+      metadataPolicy: None
+keda:
+  enabled: true
+  name: api-sqs-scaler
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  scaleTargetRef:
+    name: api
+  triggerAuthentication:
+    name: api-aws-credentials
+    spec:
+      podIdentity:
+        provider: aws
+  triggers:
+  - type: aws-cloudwatch
+    metadata:
+      namespace: AWS/ApplicationELB
+      metricName: TargetResponseTime
+      dimensionName: LoadBalancer;TargetGroup
+      dimensionValue: app/sample-alb/0123456789abcdef;targetgroup/sample-web-tg/0123456789abcdef
+      metricStat: Average
+      metricStatPeriod: '300'
+      metricCollectionTime: '300'
+      targetMetricValue: '5'
+      minMetricValue: '0'
+      activationTargetMetricValue: '0'
+      awsRegion: us-east-1
+targetGroupBinding:
+  enabled: true
+  name: api-tgb
+  targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/sample-web-tg/0123456789abcdef
+  targetType: ip
+  serviceRef:
+    name: api
+    port: 4000
+  networking:
+    ingress:
+    - from:
+      - securityGroup:
+          groupID: sg-0123456789abcdef0
+      ports:
+      - port: 4000
+        protocol: TCP
+  vpcID: vpc-0123456789abcdef0
+vpa:
+  enabled: true
+  name: api-vpa
+  updateMode: 'Off'
+  containerName: '*'
+  minAllowed:
+    cpu: 50m
+    memory: 128Mi
+  maxAllowed:
+    cpu: 4
+    memory: 4Gi

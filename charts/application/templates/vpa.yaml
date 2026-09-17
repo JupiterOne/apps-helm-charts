@@ -1,0 +1,40 @@
+{{- if .Values.vpa }}
+{{- if .Values.vpa.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  labels:
+{{ include "application.labels.metadata" . | indent 4 }}
+{{- if .Values.vpa.additionalLabels }}
+{{ toYaml .Values.vpa.additionalLabels | indent 4 }}
+{{- end }}
+  name: {{ .Values.vpa.name | default (printf "%s-vpa" (include "application.name" .)) }}
+  namespace: {{ template "application.namespace" . }}
+spec:
+  {{- $ref := .Values.vpa.targetRef | default dict }}
+  targetRef:
+    apiVersion: {{ $ref.apiVersion | default "apps/v1" }}
+    kind: {{ $ref.kind | default "Deployment" }}
+    name: {{ $ref.name | default (include "application.name" .) }}
+  updatePolicy:
+    {{- /* Quoted on purpose: an unquoted Off is a YAML boolean. */}}
+    updateMode: {{ .Values.vpa.updateMode | default "Off" | quote }}
+  {{- if or .Values.vpa.minAllowed .Values.vpa.maxAllowed .Values.vpa.containerPolicies }}
+  resourcePolicy:
+    containerPolicies:
+    {{- if .Values.vpa.containerPolicies }}
+{{ toYaml .Values.vpa.containerPolicies | indent 6 }}
+    {{- else }}
+      - containerName: {{ .Values.vpa.containerName | default "*" | quote }}
+        {{- with .Values.vpa.minAllowed }}
+        minAllowed:
+{{ toYaml . | indent 10 }}
+        {{- end }}
+        {{- with .Values.vpa.maxAllowed }}
+        maxAllowed:
+{{ toYaml . | indent 10 }}
+        {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

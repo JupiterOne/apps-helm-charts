@@ -1,12 +1,11 @@
 {{- if .Values.autoscaling }}
 {{- if and .Values.autoscaling.enabled .Values.deployment }}
-apiVersion: autoscaling/v2beta2
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ template "application.name" . }}
   labels:
-    {{ include "application.labels.team" . | nindent 4 }}
-    {{ include "application.labels.chart" . | nindent 4 }}
+    {{ include "application.labels.metadata" . | nindent 4 }}
   {{- if .Values.autoscaling.additionalLabels }}
     {{- toYaml .Values.autoscaling.additionalLabels | nindent 4 }}
   {{- end }}

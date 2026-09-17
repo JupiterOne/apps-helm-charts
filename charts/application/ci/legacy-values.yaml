@@ -1,0 +1,66 @@
+# Legacy consumer shape: repository/tag image, env value map, configMap.files,
+# secret.files, HPA, PDB minAvailable, ingress and a CronJob with multiple jobs.
+applicationName: legacy-app
+deployment:
+  replicas: 2
+  image:
+    repository: docker.io/nginx
+    tag: "1.27"
+  env:
+    ENVIRONMENT:
+      value: dev
+  ports:
+    - containerPort: 8080
+      name: http
+  envFrom:
+    app-config:
+      type: configmap
+      nameSuffix: app-config
+configMap:
+  enabled: true
+  files:
+    app-config:
+      LOG_LEVEL: info
+secret:
+  enabled: true
+  files:
+    creds:
+      data:
+        API_KEY: not-a-real-key
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+pdb:
+  enabled: true
+  minAvailable: 1
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - legacy.example.com
+cronJob:
+  enabled: true
+  jobs:
+    nightly:
+      schedule: "0 2 * * *"
+      image:
+        repository: docker.io/busybox
+        tag: "1.36"
+      command: ["/bin/sh", "-c"]
+      args: ["echo nightly"]
+    hourly:
+      schedule: "0 * * * *"
+      image:
+        repository: docker.io/busybox
+        tag: "1.36"
+      env:
+        MODE:
+          value: hourly
