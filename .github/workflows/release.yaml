@@ -117,10 +117,12 @@ jobs:
       if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
       run: |
         git status
-        git remote set-url origin https://x-access-token:${{env.TOKEN}}@github.com/$GITHUB_REPOSITORY
         git add charts/application/Chart.yaml
         git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-        git push origin
+        # Push through an explicit URL and leave origin untouched: chart-releaser builds its
+        # gh-pages push URL by prefixing origin with its own token, so a token already in
+        # origin yields token@token@github.com ("Port number was not a decimal number").
+        git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
         echo "GITHUB_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
       env: 
         TOKEN: ${{ steps.get_token.outputs.app_token }}  
