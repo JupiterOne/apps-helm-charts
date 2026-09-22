@@ -5,6 +5,12 @@ kind: Service
 metadata:
   labels:
 {{ include "application.labels.metadata" . | indent 4 }}
+{{- /* The ServiceMonitor selects on `app`, which chart labels alone do not carry. */ -}}
+{{- $metadata := include "application.labels.metadata" . | fromYaml -}}
+{{- $additional := default (dict) .Values.service.additionalLabels -}}
+{{- if and .Values.serviceMonitor .Values.serviceMonitor.enabled (not (hasKey $metadata "app")) (not (hasKey $additional "app")) }}
+{{ include "application.labels.selector" . | indent 4 }}
+{{- end }}
 {{- if .Values.service.additionalLabels }}
 {{ toYaml .Values.service.additionalLabels | indent 4 }}
 {{- end }}
