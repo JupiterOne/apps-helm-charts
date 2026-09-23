@@ -2,6 +2,28 @@ apiVersion: v1
 entries:
   application:
   - apiVersion: v1
+    created: "2026-09-23T19:51:43.219206481Z"
+    description: Re-usable Helm charts for different application deployment patterns
+      at JupiterOne
+    digest: f670130b41be744350363283c90a08c41f7b126d9104238d9ef0fbf15bb084ac
+    home: https://github.com/JupiterOne/apps-helm-charts
+    keywords:
+    - kubernetes
+    - helm
+    - jupiterone
+    - sre
+    - bestpractices
+    - designpatterns
+    - templating
+    - appdeployments
+    maintainers:
+    - email: sre@jupiterone.com
+      name: SRE
+    name: application
+    urls:
+    - https://github.com/JupiterOne/apps-helm-charts/releases/download/application-1.1.3/application-1.1.3.tgz
+    version: 1.1.3
+  - apiVersion: v1
     created: "2026-09-23T19:47:00.977797805Z"
     description: Re-usable Helm charts for different application deployment patterns
       at JupiterOne
@@ -221,4 +243,4 @@ entries:
     urls:
     - https://github.com/JupiterOne/apps-helm-charts/releases/download/application-0.1.3/application-0.1.3.tgz
     version: 0.1.3
-generated: "2026-09-23T19:47:00.977851104Z"
+generated: "2026-09-23T19:51:43.219247908Z"
