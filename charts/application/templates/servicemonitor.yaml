@@ -4,14 +4,9 @@ apiVersion: "monitoring.coreos.com/v1"
 kind: ServiceMonitor
 metadata:
   labels:
-{{ include "application.labels.metadata" . | indent 4 }}
-{{- if .Values.serviceMonitor.additionalLabels }}
-{{ toYaml .Values.serviceMonitor.additionalLabels | indent 4 }}
-{{- end }}
-{{- if or .Values.serviceMonitor.annotations .Values.forecastle.enabled }}
+{{ include "application.labels.serviceMonitor" . | indent 4 }}
+{{- if .Values.serviceMonitor.annotations }}
   annotations:
-{{- end }}
-{{- if or .Values.serviceMonitor.annotations }}
 {{ toYaml .Values.serviceMonitor.annotations | indent 4 }}
 {{- end }}
   name: {{ template "application.name" . }}-svc-monitor
@@ -19,10 +14,10 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ template "application.name" . }}
+{{ include "application.labels.selector" . | indent 6 }}
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+    - {{ template "application.namespace" . }}
   endpoints:
 {{ toYaml .Values.serviceMonitor.endpoints | indent 4 }}
 {{- end }}

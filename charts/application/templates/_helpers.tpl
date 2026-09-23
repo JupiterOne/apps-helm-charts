@@ -77,6 +77,23 @@ Usage:
 {{- end -}}
 
 {{/*
+ServiceMonitor labels: metadata labels and serviceMonitor.additionalLabels, with `release`
+forced to serviceMonitor.release because the Prometheus operator selects on it.
+Usage:
+{{ include "application.labels.serviceMonitor" . | indent 4 }}
+*/}}
+{{- define "application.labels.serviceMonitor" -}}
+{{- $metadata := include "application.labels.metadata" . | fromYaml -}}
+{{- $release := dict "release" (default "prometheus" .Values.serviceMonitor.release) -}}
+{{- $labels := merge $release (default (dict) .Values.serviceMonitor.additionalLabels) $metadata -}}
+{{- $lines := list -}}
+{{- range $k, $v := $labels -}}
+{{- $lines = append $lines (printf "%s: %s" $k ($v | quote)) -}}
+{{- end -}}
+{{ join "\n" $lines }}
+{{- end -}}
+
+{{/*
 Pod template labels: the selector label, commonLabels, then the workload's own podLabels.
 `app` is seeded from the application name and always wins so pods can never drift away
 from the immutable selector.

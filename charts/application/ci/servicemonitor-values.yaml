@@ -1,0 +1,11 @@
+# Exercises the ServiceMonitor with chart labels on, so `release` must be overridden to
+# the Prometheus operator's selector value rather than the Helm release name.
+applicationName: metrics-app
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    scrape: "true"
+  endpoints:
+  - interval: 30s
+    path: /metrics
+    port: http
