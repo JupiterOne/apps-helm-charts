@@ -15,6 +15,15 @@ key map feeds the container's configMapKeyRef entries (see application.env). */ 
 {{- end }}
 {{- end }}
 {{- end }}
+{{- if and .Values.job .Values.job.enabled }}
+{{- range $jobName, $job := .Values.job.jobs }}
+{{- if $job.envFromConfigMap }}
+{{- if or (not (hasKey $job.envFromConfigMap "enabled")) $job.envFromConfigMap.enabled }}
+{{- $fanouts = append $fanouts (dict "name" ($job.envFromConfigMap.name | default $jobName) "spec" $job.envFromConfigMap) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- range $fanouts }}
 ---
 apiVersion: v1

@@ -1,0 +1,92 @@
+{{- /* One-shot Jobs. With argocd.argoproj.io/hook annotations they run as ArgoCD sync hooks
+(for example PostSync with hook-delete-policy BeforeHookCreation), which is how a
+"run once per image change" task such as a schema migration lives in GitOps. */ -}}
+{{- if and .Values.job .Values.job.enabled }}
+{{- range $name, $job := .Values.job.jobs }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+{{ include "application.labels.metadata" $ | indent 4 }}
+{{- if $job.additionalLabels }}
+{{ toYaml $job.additionalLabels | indent 4 }}
+{{- end }}
+{{- if or $job.annotations $.Values.commonAnnotations }}
+  annotations:
+{{ toYaml (merge (dict) (default (dict) $job.annotations) (default (dict) $.Values.commonAnnotations)) | indent 4 }}
+{{- end }}
+  name: {{ $name }}
+  namespace: {{ template "application.namespace" $ }}
+spec:
+  {{- if not (kindIs "invalid" $job.backoffLimit) }}
+  backoffLimit: {{ $job.backoffLimit }}
+  {{- end }}
+  {{- with $job.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ . }}
+  {{- end }}
+  {{- if not (kindIs "invalid" $job.ttlSecondsAfterFinished) }}
+  ttlSecondsAfterFinished: {{ $job.ttlSecondsAfterFinished }}
+  {{- end }}
+  {{- with $job.parallelism }}
+  parallelism: {{ . }}
+  {{- end }}
+  {{- with $job.completions }}
+  completions: {{ . }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+{{ include "application.labels.pod" (dict "root" $ "podLabels" $job.podLabels) | indent 8 }}
+      {{- with (merge (dict) (default (dict) $job.podAnnotations) (default (dict) $.Values.commonAnnotations)) }}
+      annotations:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "application.serviceAccountName" $ }}
+{{ include "application.podSpecCommon" (dict "root" $ "workload" $job) | indent 6 }}
+      containers:
+      - image: {{ include "application.image" $job.image | quote }}
+        {{- with ($job.image.imagePullPolicy | default $job.image.pullPolicy) }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
+        name: {{ $job.containerName | default $name }}
+        {{- $env := include "application.env" (dict "root" $ "workload" $job "name" $name) }}
+        {{- if $env }}
+        env:
+{{ $env | indent 8 }}
+        {{- end }}
+        {{- with $job.envFrom }}
+        envFrom:
+{{ toYaml . | indent 8 }}
+        {{- end }}
+        {{- if $job.command }}
+        command: {{- include "application.tplvalues.render" (dict "value" $job.command "context" $) | nindent 8 }}
+        {{- end }}
+        {{- with $job.args }}
+        args:
+{{ toYaml . | indent 8 }}
+        {{- end }}
+        {{- with $job.resources }}
+        resources:
+{{ toYaml . | indent 10 }}
+        {{- end }}
+        {{- with $job.containerSecurityContext }}
+        securityContext:
+{{ toYaml . | indent 10 }}
+        {{- end }}
+        {{- with $job.volumeMounts }}
+        volumeMounts:
+{{ toYaml . | indent 8 }}
+        {{- end }}
+      restartPolicy: {{ $job.restartPolicy | default "Never" }}
+      {{- with $job.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with $job.volumes }}
+      volumes:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

@@ -1753,6 +1753,143 @@ http-service-keda-tgb-values fixture matches snapshot:
         name: api
       updatePolicy:
         updateMode: "Off"
+job-values fixture matches snapshot:
+  1: |
+    apiVersion: v1
+    data:
+      INDEX_SYNC_DELETION_ENABLED: "true"
+      SERVICE_NAME: index-sync
+    kind: ConfigMap
+    metadata:
+      labels:
+        app: index-sync
+        service.name: index-sync
+      name: index-sync
+      namespace: NAMESPACE
+  2: |
+    apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      labels:
+        app: index-sync
+        service.name: index-sync
+      name: index-sync
+      namespace: NAMESPACE
+    spec:
+      data:
+        - remoteRef:
+            conversionStrategy: Default
+            decodingStrategy: None
+            key: sample-app/sample-env/NEO4J_PASSWORD_POD_002
+            metadataPolicy: None
+          secretKey: NEO4J_PASSWORD
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: configuration-api-webhook
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: index-sync
+  3: |
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      annotations:
+        argocd.argoproj.io/hook: PostSync
+        argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+        owner: '@example/platform'
+      labels:
+        app: index-sync
+        service.name: index-sync
+      name: index-sync
+      namespace: NAMESPACE
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          annotations:
+            karpenter.sh/do-not-disrupt: "true"
+            owner: '@example/platform'
+          labels:
+            app: index-sync
+            service.name: index-sync
+        spec:
+          containers:
+            - env:
+                - name: KUBERNETES_POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.name
+                - name: INDEX_SYNC_DELETION_ENABLED
+                  valueFrom:
+                    configMapKeyRef:
+                      key: INDEX_SYNC_DELETION_ENABLED
+                      name: index-sync
+                      optional: false
+                - name: SERVICE_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      key: SERVICE_NAME
+                      name: index-sync
+                      optional: false
+                - name: NEO4J_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: NEO4J_PASSWORD
+                      name: index-sync
+                      optional: false
+              image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/index-sync:c-0123456789ab
+              name: index-sync
+              resources:
+                limits:
+                  cpu: 1000m
+                  memory: 1024Mi
+                requests:
+                  cpu: 200m
+                  memory: 1024Mi
+          nodeSelector:
+            Team: platform-team
+          priorityClassName: high-priority
+          restartPolicy: Never
+          serviceAccountName: sample-ns-index-sync
+      ttlSecondsAfterFinished: 7200
+  4: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      labels:
+        app: index-sync
+        service.name: index-sync
+      name: index-sync-pod-annotations
+      namespace: NAMESPACE
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - pods
+        verbs:
+          - update
+          - patch
+          - get
+  5: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        app: index-sync
+        service.name: index-sync
+      name: index-sync-pod-annotations
+      namespace: NAMESPACE
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: index-sync-pod-annotations
+    subjects:
+      - kind: ServiceAccount
+        name: sample-ns-index-sync
+        namespace: NAMESPACE
 legacy-values fixture matches snapshot:
   1: |
     apiVersion: v1

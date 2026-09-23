@@ -20,6 +20,12 @@ tests:
     asserts:
       - matchSnapshot: {}
 
+  - it: job-values fixture matches snapshot
+    values:
+      - fixtures/job-values.yaml
+    asserts:
+      - matchSnapshot: {}
+
   - it: legacy-values fixture matches snapshot
     values:
       - fixtures/legacy-values.yaml
