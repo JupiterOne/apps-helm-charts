@@ -605,7 +605,10 @@ pdb:
 ##########################################################
 serviceMonitor:
   enabled: false
-  
+
+  # Value of the `release` label; the Prometheus operator only selects matching ServiceMonitors.
+  release: prometheus
+
   # Additional labels
   additionalLabels: {}
     # key: value
