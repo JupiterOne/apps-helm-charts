@@ -1,0 +1,95 @@
+suite: job
+templates:
+  - job.yaml
+  - configmap.yaml
+tests:
+  - it: renders nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a batch/v1 Job with hook annotations, restartPolicy and ttl
+    template: job.yaml
+    values:
+      - fixtures/job-values.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isAPIVersion:
+          of: batch/v1
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: index-sync
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/hook"]
+          value: PostSync
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/hook-delete-policy"]
+          value: BeforeHookCreation
+      - equal:
+          path: metadata.annotations.owner
+          value: '@example/platform'
+      - equal:
+          path: spec.backoffLimit
+          value: 0
+      - equal:
+          path: spec.ttlSecondsAfterFinished
+          value: 7200
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: sample-ns-index-sync
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/index-sync:c-0123456789ab
+
+  - it: env order is downward API, ConfigMap keys, then secret keys
+    template: job.yaml
+    values:
+      - fixtures/job-values.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: KUBERNETES_POD_NAME
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.configMapKeyRef.name
+          value: index-sync
+      - equal:
+          path: spec.template.spec.containers[0].env[3].valueFrom.secretKeyRef.key
+          value: NEO4J_PASSWORD
+
+  - it: fans the job's envFromConfigMap out into a ConfigMap
+    template: configmap.yaml
+    values:
+      - fixtures/job-values.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: index-sync
+      - equal:
+          path: data.INDEX_SYNC_DELETION_ENABLED
+          value: 'true'
+
+  - it: restartPolicy defaults to Never and is overridable
+    template: job.yaml
+    set:
+      job:
+        enabled: true
+        jobs:
+          once:
+            image:
+              repository: docker.io/busybox
+              tag: '1.36'
+            restartPolicy: OnFailure
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure

@@ -1,0 +1,76 @@
+# An ArgoCD PostSync hook Job (the shape query-engine's index-sync schema reconciler takes
+# in GitOps): runs after each successful sync, previous run deleted before the next.
+applicationName: index-sync
+labels:
+  chartLabels: false
+commonLabels:
+  app: index-sync
+  service.name: index-sync
+commonAnnotations:
+  owner: '@example/platform'
+rbac:
+  enabled: true
+  serviceAccount:
+    enabled: false
+    name: sample-ns-index-sync
+  roles:
+  - name: pod-annotations
+    roleName: index-sync-pod-annotations
+    bindingName: index-sync-pod-annotations
+    rules:
+    - apiGroups: ['']
+      resources: [pods]
+      verbs: [update, patch, get]
+service:
+  enabled: false
+deployment:
+  enabled: false
+job:
+  enabled: true
+  jobs:
+    index-sync:
+      annotations:
+        argocd.argoproj.io/hook: PostSync
+        argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 7200
+      restartPolicy: Never
+      podAnnotations:
+        karpenter.sh/do-not-disrupt: 'true'
+      priorityClassName: high-priority
+      nodeSelector:
+        Team: platform-team
+      image:
+        ref: 123456789012.dkr.ecr.us-east-1.amazonaws.com/sample/index-sync:c-0123456789ab
+        pullPolicy: null
+      resources:
+        requests:
+          cpu: 200m
+          memory: 1024Mi
+        limits:
+          cpu: 1000m
+          memory: 1024Mi
+      envDownwardApi:
+      - name: KUBERNETES_POD_NAME
+        fieldPath: metadata.name
+      envFromConfigMap:
+        name: index-sync
+        keys:
+          SERVICE_NAME: index-sync
+          INDEX_SYNC_DELETION_ENABLED: 'true'
+      envSecretKeys:
+      - name: NEO4J_PASSWORD
+        secretName: index-sync
+externalSecret:
+  enabled: true
+  name: index-sync
+  secretStoreRef:
+    name: configuration-api-webhook
+    kind: ClusterSecretStore
+  target:
+    name: index-sync
+    creationPolicy: Owner
+  data:
+  - secretKey: NEO4J_PASSWORD
+    remoteRef:
+      key: sample-app/sample-env/NEO4J_PASSWORD_POD_002

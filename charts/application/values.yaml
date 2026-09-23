@@ -68,6 +68,41 @@ cronJob:
     #         cpu: 1
   
 ##########################################################
+# Job
+##########################################################
+# One-shot Jobs, same per-job schema as cronJob.jobs minus the schedule fields. Annotate a
+# job with ArgoCD hook annotations to run it as a sync hook:
+#   annotations:
+#     argocd.argoproj.io/hook: PostSync
+#     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+job:
+  enabled: false
+  jobs: {}
+    # schema-migration:
+    #   annotations: {}                # e.g. the ArgoCD hook annotations above
+    #   backoffLimit: 0
+    #   activeDeadlineSeconds: 3600
+    #   ttlSecondsAfterFinished: 7200
+    #   restartPolicy: Never
+    #   containerName: ""              # defaults to the job name
+    #   podLabels: {}
+    #   podAnnotations: {}
+    #   priorityClassName: ""
+    #   terminationGracePeriodSeconds: 30
+    #   nodeSelector: {}
+    #   tolerations: []
+    #   affinity: {}
+    #   env: {}
+    #   envDownwardApi: []             # see deployment.envDownwardApi
+    #   envFromConfigMap: {}           # see deployment.envFromConfigMap
+    #   envSecretKeys: []              # see deployment.envSecretKeys
+    #   image:
+    #     ref: ""
+    #   command: []
+    #   args: []
+    #   resources: {}
+
+##########################################################
 # Deployment
 ##########################################################
 deployment:

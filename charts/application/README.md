@@ -478,6 +478,17 @@ Job paramater for each cronjob object at `cronJob.jobs`
 | cronJob.jobs.NAME.podLabels / podAnnotations | Job pod template labels and annotations | `{}` |
 | cronJob.jobs.NAME.jobLabels / jobAnnotations | `jobTemplate.metadata` labels and annotations | `{}` |
 | cronJob.jobs.NAME.priorityClassName / terminationGracePeriodSeconds / automountServiceAccountToken / topologySpreadConstraints / securityContext / containerSecurityContext | Pod and container fields | `` |
+
+### Job Parameters
+
+| Name | Description | Value |
+|------|-------------|-------|
+| job.enabled | Render one-shot `Job`s | `false` |
+| job.jobs | Map of job name to job spec; same per-job schema as `cronJob.jobs` without the schedule fields | `{}` |
+| job.jobs.NAME.annotations | Job metadata annotations; set `argocd.argoproj.io/hook` / `hook-delete-policy` here to run the Job as an ArgoCD sync hook | `{}` |
+| job.jobs.NAME.backoffLimit / activeDeadlineSeconds / ttlSecondsAfterFinished / parallelism / completions | Job spec fields, rendered when set | `` |
+| job.jobs.NAME.restartPolicy | Pod restart policy | `Never` |
+| job.jobs.NAME.envFromConfigMap | Fans out into a ConfigMap plus `configMapKeyRef` entries, like `deployment.envFromConfigMap` | `{}` |
 | cronJob.jobs.NAME.envDownwardApi / envFromConfigMap / envSecretKeys | Same env model as the Deployment | `` |
 | cronJob.jobs.NAME.image.ref | Complete image reference; wins over `repository`/`tag` | `` |
 
