@@ -75,27 +75,28 @@ jobs:
       uses: engineerd/setup-kind@v0.5.0
       with:
         version: "v0.11.1"
-    - uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '6.0.x'     
-    # Generate tag for chart without "v" prefix
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.7
-      with:
-        versionSpec: '5.x'
+    # The next chart version is the highest v<semver> tag on main plus one patch. A re-run on
+    # the bump commit itself (publish failed after the tag landed) republishes that version
+    # instead of minting another.
     - name: Determine Version
-      id:   gitversion
-      uses: gittools/actions/gitversion/execute@v0.9.7
-      with:
-        useConfigFile: true
-        configFilePath: GitVersion.yml
-    - name: Display GitVersion outputs
+      id: version
       run: |
-        echo "SemVer: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-    # Update chart tag to the latest semver tag
+        set -euo pipefail
+        last=$(git tag --list 'v[0-9]*' --merged HEAD | sort -V | tail -1)
+        last=${last#v}
+        chart=$(sed -n 's/^version: *//p' ${CHART_PATH}/Chart.yaml)
+        if [ "$chart" = "$last" ] && git tag --points-at HEAD | grep -qx "v${last}"; then
+          version=$last; bump=false
+        else
+          version=$(echo "$last" | awk -F. '{printf "%d.%d.%d", $1, $2, $3+1}'); bump=true
+        fi
+        echo "last tag v${last}, chart ${chart}, releasing ${version} (bump=${bump})"
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "bump=${bump}" >> "$GITHUB_OUTPUT"
     - name: Update Chart Version
+      if: ${{ steps.version.outputs.bump == 'true' }}
       env:
-        VERSION: ${{ steps.gitversion.outputs.majorMinorPatch }}
+        VERSION: ${{ steps.version.outputs.version }}
       run: |
         make bump-chart
     # Set Up Helm
@@ -111,14 +112,14 @@ jobs:
     - name: Dry Run Chart
       run: |
         helm install ${CHART_NAME} ${CHART_PATH} -f ${CHART_PATH}/values.yaml -n test --dry-run --debug
-    # Record the version before publishing it: bump commit, then the v<version> tag GitVersion
+    # Record the version before publishing it: bump commit, then the v<version> tag the next run
     # counts from, so the next run computes the next patch even if publishing fails.
     - name: Commit and push files
-      if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
+      if: ${{ steps.version.outputs.bump == 'true' }}
       run: |
         git status
         git add charts/application/Chart.yaml
-        git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.gitversion.outputs.majorMinorPatch }}"
+        git commit -m "[skip-ci] Updated application helm chart version to: ${{ steps.version.outputs.version }}"
         # Push through an explicit URL and leave origin untouched: chart-releaser builds its
         # gh-pages push URL by prefixing origin with its own token, so a token already in
         # origin yields token@token@github.com ("Port number was not a decimal number").
@@ -128,11 +129,11 @@ jobs:
         TOKEN: ${{ steps.get_token.outputs.app_token }}  
     - name: Tag Version
       id: tag_version
-      if: ${{ env.SHOULD_UPDATE_CHART_VERSION }}
+      if: ${{ steps.version.outputs.bump == 'true' }}
       uses: mathieudutour/github-tag-action@v6.0
       with:
         github_token: ${{ steps.get_token.outputs.app_token }}
-        custom_tag: ${{ steps.gitversion.outputs.majorMinorPatch }}
+        custom_tag: ${{ steps.version.outputs.version }}
         tag_prefix: v
         commit_sha: ${{ env.GITHUB_SHA }}   
     # Publishing runs LAST: the version is already committed and tagged above, so a failure
@@ -151,7 +152,7 @@ jobs:
       uses: 8398a7/action-slack@v3
       if: failure() # Only alert on failure
       with:
-        text: "Oh barnacles. It looks like a failure occurred when releasing helm chart apps-helm-charts/application on version: ${{ steps.gitversion.outputs.majorMinorPatch }}"
+        text: "Oh barnacles. It looks like a failure occurred when releasing helm chart apps-helm-charts/application on version: ${{ steps.version.outputs.version }}"
         status: ${{ job.status }}
         fields: repo,author,action,eventName,ref,workflow
       env:
@@ -161,7 +162,7 @@ jobs:
       uses: 8398a7/action-slack@v3
       if: success() # Only alert on success
       with:
-        text: "Just a heads up, apps-helm-charts/application has published a new helm chart release, ${{ steps.gitversion.outputs.majorMinorPatch }}, that is now available at: https://jupiterone.github.io/apps-helm-charts"
+        text: "Just a heads up, apps-helm-charts/application has published a new helm chart release, ${{ steps.version.outputs.version }}, that is now available at: https://jupiterone.github.io/apps-helm-charts"
         status: ${{ job.status }}
         fields: repo,author,action,eventName,ref,workflow
       env:
