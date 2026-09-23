@@ -1,0 +1,99 @@
+suite: cronjob
+templates:
+  - cronjob.yaml
+tests:
+  - it: renders apiVersion batch/v1
+    values:
+      - fixtures/legacy-values.yaml
+    asserts:
+      - isAPIVersion:
+          of: batch/v1
+      - isKind:
+          of: CronJob
+
+  - it: two jobs render as two documents
+    values:
+      - fixtures/legacy-values.yaml
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: suspend, backoffLimit, restartPolicy, concurrencyPolicy and history limits render
+    set:
+      cronJob:
+        enabled: true
+        jobs:
+          sync:
+            schedule: "*/5 * * * *"
+            suspend: true
+            backoffLimit: 2
+            restartPolicy: Never
+            concurrencyPolicy: Forbid
+            successfulJobsHistoryLimit: 2
+            failedJobsHistoryLimit: 4
+            image:
+              repository: docker.io/nginx
+              tag: "1.27"
+    asserts:
+      - equal:
+          path: spec.suspend
+          value: true
+      - equal:
+          path: spec.jobTemplate.spec.backoffLimit
+          value: 2
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.concurrencyPolicy
+          value: Forbid
+      - equal:
+          path: spec.successfulJobsHistoryLimit
+          value: 2
+      - equal:
+          path: spec.failedJobsHistoryLimit
+          value: 4
+
+  - it: jobLabels and jobAnnotations land on spec.jobTemplate.metadata
+    set:
+      cronJob:
+        enabled: true
+        jobs:
+          sync:
+            schedule: "*/5 * * * *"
+            jobLabels:
+              team: sre
+            jobAnnotations:
+              note: hello
+            image:
+              repository: docker.io/nginx
+              tag: "1.27"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.metadata.labels.team
+          value: sre
+      - equal:
+          path: spec.jobTemplate.metadata.annotations.note
+          value: hello
+
+  - it: podLabels and podAnnotations land on the pod template
+    set:
+      cronJob:
+        enabled: true
+        jobs:
+          sync:
+            schedule: "*/5 * * * *"
+            podLabels:
+              app-role: worker
+            podAnnotations:
+              sidecar.io/inject: "false"
+            image:
+              repository: docker.io/nginx
+              tag: "1.27"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels.app-role
+          value: worker
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.annotations["sidecar.io/inject"]
+          value: "false"

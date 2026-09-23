@@ -1,0 +1,50 @@
+suite: targetgroupbinding
+templates:
+  - targetgroupbinding.yaml
+tests:
+  - it: enabled false renders nothing
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: name defaults to applicationName-tgb
+    set:
+      targetGroupBinding.enabled: true
+      targetGroupBinding.targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/sample-tg/0123456789abcdef0
+      targetGroupBinding.serviceRef.port: 8080
+    asserts:
+      - equal:
+          path: metadata.name
+          value: application-tgb
+
+  - it: requires one of targetGroupARN or targetGroupName
+    set:
+      targetGroupBinding.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: targetGroupBinding.targetGroupARN or targetGroupName is required
+
+  - it: renders networking verbatim
+    set:
+      targetGroupBinding.enabled: true
+      targetGroupBinding.targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/sample-tg/0123456789abcdef0
+      targetGroupBinding.serviceRef.port: 8080
+      targetGroupBinding.networking:
+        ingress:
+          - from:
+              - securityGroup:
+                  groupID: sg-0123456789abcdef0
+            ports:
+              - port: 8080
+                protocol: TCP
+    asserts:
+      - equal:
+          path: spec.networking
+          value:
+            ingress:
+              - from:
+                  - securityGroup:
+                      groupID: sg-0123456789abcdef0
+                ports:
+                  - port: 8080
+                    protocol: TCP

@@ -1,0 +1,101 @@
+suite: rbac
+templates:
+  - role.yaml
+  - rolebinding.yaml
+  - serviceaccount.yaml
+  - deployment.yaml
+tests:
+  - it: roleName and bindingName override the default naming
+    set:
+      rbac.roles:
+        - name: custom
+          roleName: custom-role-name
+          bindingName: custom-binding-name
+          rules:
+            - apiGroups: [""]
+              resources: ["pods"]
+              verbs: ["get"]
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-role-name
+        template: role.yaml
+      - equal:
+          path: metadata.name
+          value: custom-binding-name
+        template: rolebinding.yaml
+      - equal:
+          path: roleRef.name
+          value: custom-role-name
+        template: rolebinding.yaml
+
+  - it: default names follow the applicationName-role-name pattern
+    set:
+      applicationName: myapp
+      rbac.roles:
+        - name: readers
+          rules:
+            - apiGroups: [""]
+              resources: ["pods"]
+              verbs: ["get"]
+    asserts:
+      - equal:
+          path: metadata.name
+          value: myapp-role-readers
+        template: role.yaml
+      - equal:
+          path: metadata.name
+          value: myapp-rolebinding-readers
+        template: rolebinding.yaml
+      - equal:
+          path: roleRef.name
+          value: myapp-role-readers
+        template: rolebinding.yaml
+
+  - it: roleLabels and bindingLabels land on the right object
+    set:
+      rbac.roles:
+        - name: readers
+          roleLabels:
+            custom: role-label
+          bindingLabels:
+            custom: binding-label
+          rules:
+            - apiGroups: [""]
+              resources: ["pods"]
+              verbs: ["get"]
+    asserts:
+      - equal:
+          path: metadata.labels.custom
+          value: role-label
+        template: role.yaml
+      - equal:
+          path: metadata.labels.custom
+          value: binding-label
+        template: rolebinding.yaml
+
+  - it: RoleBinding subject namespace equals the release namespace
+    release:
+      namespace: my-ns
+    asserts:
+      - equal:
+          path: subjects[0].namespace
+          value: my-ns
+        template: rolebinding.yaml
+      - equal:
+          path: metadata.namespace
+          value: my-ns
+        template: rolebinding.yaml
+
+  - it: no ServiceAccount when disabled; pod uses the configured name
+    set:
+      rbac.serviceAccount.enabled: false
+      rbac.serviceAccount.name: custom-sa
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: custom-sa
+        template: deployment.yaml

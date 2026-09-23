@@ -1,0 +1,25 @@
+suite: service
+templates:
+  - service.yaml
+tests:
+  - it: selector includes podLabels by default
+    set:
+      deployment.podLabels:
+        env: prod
+    asserts:
+      - equal:
+          path: spec.selector
+          value:
+            app: application
+            env: prod
+
+  - it: selector is exactly app when selectorFromPodLabels is false
+    set:
+      deployment.podLabels:
+        env: prod
+      service.selectorFromPodLabels: false
+    asserts:
+      - equal:
+          path: spec.selector
+          value:
+            app: application
