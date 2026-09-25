@@ -640,6 +640,7 @@ pdb:
 ##########################################################
 serviceMonitor:
   enabled: false
+  # name: ""                    # defaults to <applicationName>-svc-monitor
 
   # Value of the `release` label; the Prometheus operator only selects matching ServiceMonitors.
   release: prometheus
@@ -779,6 +780,7 @@ keda:
   maxReplicaCount: null
   pollingInterval: null
   cooldownPeriod: null
+  fallback: {}                  # e.g. {failureThreshold: 3, replicas: 2}
   advanced: {}
   triggerAuthentication:
     enabled: true
@@ -786,9 +788,14 @@ keda:
     podIdentityProvider: aws
     # spec: {}                  # full TriggerAuthentication spec, replaces podIdentity
   # Rendered verbatim; metadata values may use templates. authenticationRef defaults
-  # to the TriggerAuthentication above.
+  # to the TriggerAuthentication above; `authenticationRef: false` omits it for a trigger.
+  # name / metricType / useCachedMetrics are emitted when set (scalingModifiers formulas
+  # reference triggers by name).
   triggers: []
   #  - type: aws-sqs-queue
+  #    name: sqs_backlog
+  #    metricType: AverageValue
+  #    useCachedMetrics: true
   #    metadata:
   #      queueURL: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
   #      queueLength: "100"
