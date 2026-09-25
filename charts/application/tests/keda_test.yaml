@@ -52,3 +52,74 @@ tests:
           count: 1
       - notExists:
           path: spec.triggers[0].authenticationRef
+
+  - it: trigger name, metricType and useCachedMetrics are emitted when set, and fallback is passed through
+    set:
+      keda.enabled: true
+      keda.fallback:
+        failureThreshold: 3
+        replicas: 2
+      keda.triggers:
+        - type: aws-sqs-queue
+          name: sqs_backlog
+          metricType: AverageValue
+          useCachedMetrics: true
+          metadata:
+            queueURL: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+    asserts:
+      - equal:
+          path: spec.triggers[0].name
+          value: sqs_backlog
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.triggers[0].metricType
+          value: AverageValue
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.triggers[0].useCachedMetrics
+          value: true
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.fallback.replicas
+          value: 2
+        documentSelector:
+          path: kind
+          value: ScaledObject
+
+  - it: a trigger with authenticationRef false has no authenticationRef while its siblings keep theirs
+    set:
+      keda.enabled: true
+      keda.triggers:
+        - type: aws-sqs-queue
+          metadata:
+            queueURL: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+        - type: prometheus
+          authenticationRef: false
+          metadata:
+            serverAddress: http://prometheus.monitoring.svc:9090
+            query: vector(1)
+            threshold: "1.5"
+    asserts:
+      - equal:
+          path: spec.triggers[0].authenticationRef.name
+          value: application-aws-credentials
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - notExists:
+          path: spec.triggers[1].authenticationRef
+        documentSelector:
+          path: kind
+          value: ScaledObject
+      - equal:
+          path: spec.triggers[1].metadata.threshold
+          value: "1.5"
+        documentSelector:
+          path: kind
+          value: ScaledObject

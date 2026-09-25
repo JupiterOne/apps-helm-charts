@@ -58,6 +58,10 @@ spec:
   {{- with .Values.keda.cooldownPeriod }}
   cooldownPeriod: {{ . }}
   {{- end }}
+  {{- with .Values.keda.fallback }}
+  fallback:
+{{ toYaml . | indent 4 }}
+  {{- end }}
   {{- with .Values.keda.advanced }}
   advanced:
 {{ toYaml . | indent 4 }}
@@ -65,9 +69,20 @@ spec:
   triggers:
   {{- range .Values.keda.triggers }}
     - type: {{ .type }}
-      {{- if or (not (hasKey $auth "enabled")) $auth.enabled }}
+      {{- with .name }}
+      name: {{ . }}
+      {{- end }}
+      {{- with .metricType }}
+      metricType: {{ . }}
+      {{- end }}
+      {{- if not (kindIs "invalid" .useCachedMetrics) }}
+      useCachedMetrics: {{ .useCachedMetrics }}
+      {{- end }}
+      {{- /* authenticationRef: false opts a trigger out (e.g. prometheus, which has no AWS identity to assume). */}}
+      {{- $ref := .authenticationRef }}
+      {{- if and (or (not (hasKey $auth "enabled")) $auth.enabled) (not (and (kindIs "bool" $ref) (not $ref))) }}
       authenticationRef:
-        name: {{ .authenticationRef | default $authName }}
+        name: {{ if kindIs "string" $ref }}{{ $ref }}{{ else }}{{ $authName }}{{ end }}
       {{- end }}
       metadata:
         {{- range $k, $v := .metadata }}

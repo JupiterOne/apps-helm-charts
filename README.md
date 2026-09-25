@@ -305,6 +305,7 @@ Periodic probe of container liveness. Container will be restarted if the probe f
 | ------------------------ | -------------------------------------------------------------------------------------------- | --------------- |
 | serviceMonitor.enabled | Enable serviceMonitor                                                                                                                                                                            | `false`                                                                                                                                               |
 | serviceMonitor.additionalLabels | Labels for serviceMonitor                                                                                                                                                                        | `{}`                                                                                                                                                  |
+| serviceMonitor.name | ServiceMonitor name | `<applicationName>-svc-monitor` |
 | serviceMonitor.annotations | Annotations for serviceMonitor                                                                                                                                                                   | `{}`                                                                                                                                                  |
 | serviceMonitor.jobLabel | Job Label used for application selector                                                                                                                                                          | `k8s-app`                                                                                                                                             |
 | serviceMonitor.endpoints | Array of endpoints to be scraped by prometheus                                                                                                                                                   | - interval: 5s<br>&nbsp;&nbsp;path: /actuator/prometheus<br>&nbsp;&nbsp;port: http                                                                    |
@@ -411,12 +412,12 @@ Periodic probe of container liveness. Container will be restarted if the probe f
 | keda.name | ScaledObject name | `<applicationName>-scaler` |
 | keda.scaleTargetRef | `{apiVersion, kind, name}` of the scaled workload | `<applicationName>` |
 | keda.minReplicaCount / keda.maxReplicaCount | Replica bounds | `` |
-| keda.pollingInterval / keda.cooldownPeriod / keda.advanced | Passed through | `` |
+| keda.pollingInterval / keda.cooldownPeriod / keda.fallback / keda.advanced | Passed through | `` |
 | keda.triggerAuthentication.enabled | Render the TriggerAuthentication and reference it from every trigger | `true` |
 | keda.triggerAuthentication.name | TriggerAuthentication name | `<applicationName>-aws-credentials` |
 | keda.triggerAuthentication.podIdentityProvider | `spec.podIdentity.provider` | `aws` |
 | keda.triggerAuthentication.spec | Full spec, replaces `podIdentity` | `` |
-| keda.triggers | Triggers rendered verbatim: `[{type, metadata, authenticationRef}]`; metadata values may use templates | `[]` |
+| keda.triggers | Triggers rendered verbatim: `[{type, name, metricType, useCachedMetrics, metadata, authenticationRef}]`; metadata values may use templates; `authenticationRef: false` omits the reference for that trigger | `[]` |
 
 ### ExternalSecret Parameters
 
