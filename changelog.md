@@ -2,6 +2,8 @@
 All notable changes to this project will be documented here
 
 ### Unreleased
+- ExternalSecret now defaults to `external-secrets.io/v1`; ESO 2.x no longer serves `v1beta1`.
+  Requires ESO 0.16+ on the target cluster; `externalSecret.apiVersion` still overrides it
 - Added a helm-unittest suite under `charts/application/tests/` covering the templates
   added in v1.1.0; `ci/*-values.yaml` fixtures moved to `charts/application/tests/fixtures/`
   and are now also used as suite-level `values:` overrides
