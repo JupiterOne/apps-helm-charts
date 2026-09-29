@@ -1,0 +1,42 @@
+suite: extra-objects
+templates:
+  - extra-objects.yaml
+tests:
+  - it: renders nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders map and string entries through tpl
+    set:
+      applicationName: sample
+      extraObjects:
+        - apiVersion: iam.aws.upbound.io/v1beta1
+          kind: Role
+          metadata:
+            name: "{{ .Values.applicationName }}-role"
+            annotations:
+              argocd.argoproj.io/sync-wave: "-1"
+          spec:
+            forProvider:
+              assumeRolePolicy: "{}"
+        - |
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: {{ .Values.applicationName }}-extra
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: sample-role
+        documentIndex: 0
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-wave"]
+          value: "-1"
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: sample-extra
+        documentIndex: 1

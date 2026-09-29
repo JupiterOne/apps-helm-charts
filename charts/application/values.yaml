@@ -840,3 +840,11 @@ targetGroupBinding:
   networking: {}
   vpcID: ""
   additionalLabels: {}
+
+##########################################################
+# Extra objects
+##########################################################
+# Manifests rendered as-is next to the workload (Crossplane managed resources, for example).
+# Each entry is a map or a YAML string; both go through tpl. Order with argocd sync-wave
+# annotations when a workload depends on them.
+extraObjects: []

@@ -1,0 +1,10 @@
+{{- /* Arbitrary manifests shipped with the application (Crossplane managed resources, for example),
+rendered through tpl so values may reference the chart's context. Each entry is a map or a YAML string. */ -}}
+{{- range $i, $obj := .Values.extraObjects }}
+---
+{{- if kindIs "string" $obj }}
+{{ include "application.tplvalues.render" (dict "value" $obj "context" $) }}
+{{- else }}
+{{ include "application.tplvalues.render" (dict "value" (toYaml $obj) "context" $) }}
+{{- end }}
+{{- end }}
