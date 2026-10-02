@@ -386,7 +386,7 @@ cronjob-values fixture matches snapshot:
       successfulJobsHistoryLimit: 1
       suspend: false
   3: |
-    apiVersion: external-secrets.io/v1beta1
+    apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       labels:
@@ -910,7 +910,7 @@ deployment-with-vpa-values fixture matches snapshot:
               operator: Equal
               value: platform-team
   3: |
-    apiVersion: external-secrets.io/v1beta1
+    apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       labels:
@@ -1489,7 +1489,7 @@ http-service-keda-tgb-values fixture matches snapshot:
               operator: Equal
               value: platform-team
   3: |
-    apiVersion: external-secrets.io/v1beta1
+    apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       labels:
@@ -1767,7 +1767,7 @@ job-values fixture matches snapshot:
       name: index-sync
       namespace: NAMESPACE
   2: |
-    apiVersion: external-secrets.io/v1beta1
+    apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       labels:

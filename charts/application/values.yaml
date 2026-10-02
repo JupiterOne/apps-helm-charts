@@ -804,7 +804,7 @@ keda:
   annotations: {}
 
 ##########################################################
-# ExternalSecret (external-secrets.io/v1beta1)
+# ExternalSecret (external-secrets.io/v1)
 ##########################################################
 externalSecret:
   enabled: false
